@@ -23,6 +23,7 @@ def load_data():
 def save_data(data):
     with open(DB_PATH, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        print("💾 Current saved storage:", json.dumps(data, indent=2, ensure_ascii=False))
 
 def update_supplier(data, record):
     tab = record.get("station")  # "Хамза" or "Сергили"

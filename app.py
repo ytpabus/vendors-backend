@@ -17,14 +17,18 @@ def supplier_webhook():
     data = load_data()
     updated = update_supplier(data, record)
     save_data(data)
+    print("✅ Incoming supplier webhook:", record)
     # send_telegram_alert(record)
     return jsonify({'status': 'supplier_saved', 'updated': updated}), 200
+     
 
 @app.route('/webhook/vendor', methods=['POST'])
 def vendor_webhook():
     record = request.json
+    print("✅ Incoming supplier webhook:", record) 
     if not record or 'id' not in record or 'x_studio_supplier_order' not in record:
         return jsonify({'error': 'Missing vendor ID or supplier ID'}), 400
+        
 
     data = load_data()
     update_vendor(data, record)
@@ -34,8 +38,10 @@ def vendor_webhook():
 @app.route('/webhook/delete', methods=['POST'])
 def delete_webhook():
     record = request.json
+    print("✅ Incoming supplier webhook:", record) 
     if not record or 'id' not in record:
         return jsonify({'error': 'Missing supplier ID'}), 400
+        
 
     data = load_data()
     deleted = delete_supplier(data, record["id"])
