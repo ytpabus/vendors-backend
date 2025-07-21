@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import FieldEditor from '../components/FieldEditor';
 import './App.css';
 
-const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 function App() {
   const [tab, setTab] = useState('Хамза');
