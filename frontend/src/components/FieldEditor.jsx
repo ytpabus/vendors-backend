@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BASE_URL } from '../App';
 
 export default function FieldEditor({ fields, setFields }) {
   const [editing, setEditing] = useState([...fields]);
@@ -29,7 +30,7 @@ export default function FieldEditor({ fields, setFields }) {
   setEditing(unique);
   setNewFields([]); // Clear only the completed ones
 
-  fetch('/fields-config', {
+  fetch(`${BASE_URL}/fields-config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(unique)

@@ -7,6 +7,8 @@ from utils.helpers import (
 from utils.helpers import CONFIG_PATH
 import json
 import os
+from flask_cors import CORS
+CORS(app)
 
 app = Flask(__name__)
 

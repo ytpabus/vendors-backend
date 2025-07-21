@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import FieldEditor from '../components/FieldEditor';
 import './App.css';
 
-const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+
+
+
 
 function App() {
   const [tab, setTab] = useState('Хамза');
@@ -14,10 +17,24 @@ function App() {
   const [editingVendors, setEditingVendors] = useState({});
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
-    fetch(`${BASE_URL}/fields-config`).then(res => res.json()).then(setFields);
-  }, []);
+  
+
+   useEffect(() => {
+  fetch(`${BASE_URL}/data`)
+    .then(res => res.json())
+    .then(setData);
+
+  fetch(`${BASE_URL}/fields-config`)
+    .then(res => {
+      if (!res.ok) throw new Error(`Failed to fetch fields: ${res.status}`);
+      return res.json();
+    })
+    .then(setFields)
+    .catch(err => {
+      console.error("❌ Could not load fields config:", err);
+      alert("Unable to load field configuration. Check backend connection.");
+    });
+}, []);
 
   const filtered = data[tab] || [];
 
@@ -265,3 +282,5 @@ function App() {
 }
 
 export default App;
+
+
