@@ -13,8 +13,8 @@ function App() {
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
   useEffect(() => {
-    fetch('/data').then(res => res.json()).then(setData);
-    fetch('/fields-config').then(res => res.json()).then(setFields);
+    fetch('https://vendors-backend-xkqt.onrender.com/data').then(res => res.json()).then(setData);
+    fetch('https://vendors-backend-xkqt.onrender.com/data').then(res => res.json()).then(setFields);
   }, []);
 
   const filtered = data[tab] || [];
