@@ -1,0 +1,114 @@
+{
+  "Хамза": [
+    {
+      "gtd": 0,
+      "id": 1,
+      "remains": 3500,
+      "station": "Хамза",
+      "vendors": [
+        {
+          "id": 101,
+          "supplier_id": 1,
+          "x_studio_contract": "AZ/V1",
+          "x_studio_gtd": 4000.0,
+          "x_studio_kley": 28,
+          "x_studio_lab": 1,
+          "x_studio_lab_kley": "12",
+          "x_studio_supplier_order": 1
+        },
+        {
+          "id": "12",
+          "x_studio_contract_id": "2",
+          "x_studio_gtd": 4000.0,
+          "x_studio_lab_kley": "12",
+          "x_studio_name_firm": "2",
+          "x_studio_name_station_from": "2",
+          "x_studio_name_station_to": "2",
+          "x_studio_supplier_order": 1
+        }
+      ],
+      "x_studio_contract": "01-AZ/LTD",
+      "x_studio_gtd": 8000.0,
+      "x_studio_kley": "242",
+      "x_studio_name_station_to": "Хамза",
+      "x_studio_refused": "1111",
+      "x_studio_remains": 101.0,
+      "x_studio_tons": "9212"
+    },
+    {
+      "gtd": 0,
+      "id": "123",
+      "remains": 3500,
+      "station": "Хамза",
+      "vendors": [
+        {
+          "id": 101,
+          "supplier_id": 1,
+          "x_studio_contract": "AZ/V1",
+          "x_studio_gtd": 3000.0,
+          "x_studio_kley": 28,
+          "x_studio_lab": 1,
+          "x_studio_supplier_order": "123",
+          "x_studio_lab_kley": "1"
+        },
+        {
+          "id": "12",
+          "x_studio_contract_id": "2",
+          "x_studio_name_firm": "2",
+          "x_studio_name_station_from": "2",
+          "x_studio_name_station_to": "2",
+          "x_studio_supplier_order": "123",
+          "x_studio_lab_kley": "1",
+          "x_studio_gtd": 0.0
+        },
+        {
+          "id": "1011",
+          "supplier_id": 1,
+          "x_studio_contract": "AZ/V1",
+          "x_studio_gtd": 3000.0,
+          "x_studio_kley": 28,
+          "x_studio_lab": 1,
+          "x_studio_supplier_order": "123",
+          "x_studio_lab_kley": "1"
+        }
+      ],
+      "x_studio_contract": "01-AZ/LTD",
+      "x_studio_gtd": 6000.0,
+      "x_studio_kley": 24,
+      "x_studio_name_station_to": "Хамза",
+      "x_studio_remains": -1000.0,
+      "x_studio_tons": "5000"
+    }
+  ],
+  "Сергили": [
+    {
+      "id": 2,
+      "x_studio_contract": "02-BB/LTD",
+      "x_studio_kley": 22,
+      "x_studio_tons": 4000,
+      "x_studio_remains": 0,
+      "x_studio_name_station_to": "Сергили",
+      "station": "Сергили",
+      "vendors": [
+        {
+          "id": 102,
+          "supplier_id": 2,
+          "x_studio_contract": "BB/V1",
+          "x_studio_kley": 26,
+          "x_studio_gtd": 4000,
+          "x_studio_lab": 0
+        }
+      ],
+      "gtd": 0,
+      "remains": 4000
+    },
+    {
+      "id": 1752759842053,
+      "station": "Сергили",
+      "x_studio_kley": "",
+      "x_studio_tons": "",
+      "x_studio_name_station_to": "Сергили",
+      "vendors": []
+    }
+  ]
+}
