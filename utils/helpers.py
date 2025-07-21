@@ -26,10 +26,16 @@ def save_data(data):
         print("💾 Current saved storage:", json.dumps(data, indent=2, ensure_ascii=False))
 
 def update_supplier(data, record):
-    # Require a valid station name
-    tab = record.get("x_studio_name_station_to")
-    if not tab or not isinstance(tab, str) or not tab.strip():
-        return False  # Skip update if station is missing or blank
+    station_id = record.get("x_studio_station_to")
+
+    station_map = {
+        1: "Сергили",
+        2: "Хамза"
+    }
+
+    tab = station_map.get(station_id)
+    if not tab:
+        return False  # Skip unknown station
 
     if tab not in data:
         data[tab] = []
