@@ -8,9 +8,11 @@ from utils.helpers import CONFIG_PATH
 import json
 import os
 from flask_cors import CORS
-CORS(app)
 
 app = Flask(__name__)
+
+CORS(app)
+
 
 def log_event(label, data):
     with open("webhook.log", "a", encoding="utf-8") as f:
