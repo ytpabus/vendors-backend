@@ -1,1 +1,43 @@
-{}
+{
+  "Хамза": [
+    {
+      "id": 1,
+      "x_studio_name_station_to": "Ташкент-Южный",
+      "x_studio_kley": 28,
+      "x_studio_tons": 90,
+      "x_studio_gtd": 50,
+      "x_studio_remains": 40,
+      "x_studio_refused": 0,
+      "vendors": [
+        {
+          "id": 1001,
+          "x_studio_name_firm": "OOO Рахмат",
+          "x_studio_contract_id": "K-2025-001",
+          "x_studio_name_station_from": "Самарканд",
+          "x_studio_name_station_to": "Ташкент-Южный",
+          "x_studio_gtd": 50,
+          "x_studio_kley": 28,
+          "x_studio_lab_kley": 25,
+          "x_studio_deadline": "2025-07-20",
+          "x_studio_date": "2025-07-18",
+          "x_studio_arrival": "2025-07-19",
+          "x_studio_name_stage": "Отправлено",
+          "x_studio_supplier_order": 1,
+          "file": ""
+        }
+      ]
+    }
+  ],
+  "Сергили": [
+    {
+      "id": 2,
+      "x_studio_name_station_to": "Сергили",
+      "x_studio_kley": 26,
+      "x_studio_tons": 70,
+      "x_studio_gtd": 70,
+      "x_studio_remains": 0,
+      "x_studio_refused": 0,
+      "vendors": []
+    }
+  ]
+}
