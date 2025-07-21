@@ -46,9 +46,13 @@ def delete_webhook():
 def get_data():
     return jsonify(load_data())
 
-@app.route('/fields-config', methods=['GET'])
+@app.route("/fields-config", methods=["GET"])
 def get_fields_config():
-    return jsonify(load_field_config())
+    try:
+        with open("fields_config.json", "r", encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route('/fields-config', methods=['POST'])
 def update_fields_config():
