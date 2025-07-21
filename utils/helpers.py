@@ -26,16 +26,19 @@ def save_data(data):
         print("💾 Current saved storage:", json.dumps(data, indent=2, ensure_ascii=False))
 
 def update_supplier(data, record):
-    tab = record.get("station")  # "Хамза" or "Сергили"
-    if not tab or tab not in data:
-        return False
+    # Require a valid station name
+    tab = record.get("x_studio_name_station_to")
+    if not tab or not isinstance(tab, str) or not tab.strip():
+        return False  # Skip update if station is missing or blank
+
+    if tab not in data:
+        data[tab] = []
 
     updated = False
     for i, r in enumerate(data[tab]):
         if r["id"] == record["id"]:
             preserved_vendors = r.get("vendors", [])
 
-            # Recalculate GTD based on existing vendors
             total_gtd = sum(float(v.get("x_studio_gtd", 0) or 0) for v in preserved_vendors)
             tons = float(record.get("x_studio_tons", 0) or 0)
             refused = float(record.get("x_studio_refused", 0) or 0)
