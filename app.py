@@ -4,6 +4,7 @@ from utils.helpers import (
     update_supplier, update_vendor, delete_supplier,
     load_field_config, save_field_config
 )
+from utils.helpers import CONFIG_PATH
 import json
 import os
 
@@ -62,7 +63,7 @@ def get_data():
 @app.route("/fields-config", methods=["GET"])
 def get_fields_config():
     try:
-        with open("fields_config.json", "r", encoding="utf-8") as f:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             return jsonify(json.load(f))
     except Exception as e:
         return jsonify({"error": str(e)})
