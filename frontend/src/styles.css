@@ -1,0 +1,16 @@
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.record-table th,
+.record-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.record-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}

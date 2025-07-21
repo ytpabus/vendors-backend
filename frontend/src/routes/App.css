@@ -1,0 +1,97 @@
+
+body {
+  font-family: Arial, sans-serif;
+  background: url('https://wallpapercave.com/wp/wp9729280.jpg') no-repeat center center fixed;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  text-align: left;
+  margin: 20px 0 0 10px;
+  font-size: 28px;
+}
+
+.app-container {
+  max-width: 1400px;
+  margin: auto;
+  padding-bottom: 40px;
+}
+
+.supplier-card {
+  background: #f1f5f9;
+  border: 1px solid #90caf9;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 20px auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.supplier-card .record-table {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.vendor-table-wrapper .record-table {
+  font-size: 12px;
+  width: 95%;
+  margin-left: 10px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+table.vendor-new {
+  font-size: 12px;
+  width: 95%;
+  margin-left: 10px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.record-table th,
+.record-table td,
+.vendor-new td {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent;
+}
+
+.record-table th {
+  background: #eaeaea;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: flex-start;
+  margin: 20px 10px;
+}
+
+.tab-buttons button {
+  margin-right: 10px;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #ffffff;
+  border: 2px solid #90caf9;
+  border-radius: 8px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.tab-buttons button.selected {
+  background-color: #bbdefb;
+  border-color: #42a5f5;
+  color: #0d47a1;
+}
