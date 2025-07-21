@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import FieldEditor from '../components/FieldEditor';
 import './App.css';
