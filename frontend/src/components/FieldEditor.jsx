@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BASE_URL } from '../App';
+import { BASE_URL } from '../App.jsx';
 
 export default function FieldEditor({ fields, setFields }) {
   const [editing, setEditing] = useState([...fields]);
