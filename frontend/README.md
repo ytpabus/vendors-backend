@@ -1,0 +1,1 @@
+React frontend restructured with Create React App to work on Render.
