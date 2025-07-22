@@ -95,3 +95,19 @@ table.vendor-new {
   border-color: #42a5f5;
   color: #0d47a1;
 }
+
+th.col-id,
+td.col-id {
+  width: 50px;
+  max-width: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Allow more space for Клейковина (Gluten) column */
+th.col-x_studio_kley,
+td.col-x_studio_kley {
+  min-width: 140px;
+  white-space: nowrap;
+}
