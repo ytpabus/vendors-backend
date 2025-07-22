@@ -118,6 +118,9 @@ function App() {
       </div>
 
       {filtered.map((record, index) => {
+        const hasMissingLabKley = (record.vendors || []).some(
+          v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
+        );
         const isExpanded = expandedSuppliers.includes(record.id);
         const isEditing = !!editingSuppliers[record.id];
 
@@ -130,8 +133,9 @@ function App() {
                     <th key={field.key}>
                       {field.label}
                       {field.key === 'x_studio_kley' &&
-                        record.vendors?.some(v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0)
-                        ? ' ⚠️' : ''}
+  record.vendors?.some(v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0) && (
+    <span style={{ color: 'red' }}> ⚠️</span>
+)}
                     </th>
                   ))}
                   {adminMode && <th>Actions</th>}
