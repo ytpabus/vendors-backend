@@ -130,13 +130,7 @@ function App() {
               <thead>
                 <tr>
                   {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
-                    <th key={field.key}>
-                      {field.label}
-                      {field.key === 'x_studio_kley' &&
-  record.vendors?.some(v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0) && (
-    <span style={{ color: 'red' }}> ⚠️</span>
-)}
-                    </th>
+                    <th key={field.key}>{field.label}</th>
                   ))}
                   {adminMode && <th>Actions</th>}
                 </tr>
@@ -146,9 +140,15 @@ function App() {
                   {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => {
                     const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
                     let style = {};
+
                     if (field.key === 'x_studio_remains' && value > 0) {
                       style.backgroundColor = '#fdd';
                     }
+
+                    if (field.key === 'x_studio_kley' && hasMissingLabKley) {
+                      style.backgroundColor = '#fdd';
+                    }
+
                     return (
                       <td key={field.key} className={`col-${field.key}`} style={style}>
                         {isEditing ? (
