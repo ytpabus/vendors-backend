@@ -51,7 +51,7 @@ def update_supplier(data, record):
             total_gtd = sum(float(v.get("x_studio_gtd", 0) or 0) for v in preserved_vendors)
             tons = float(record.get("x_studio_tons", 0) or 0)
             refused = float(record.get("x_studio_refused", 0) or 0)
-            remains = tons - total_gtd - refused
+            remains = round(tons - total_gtd - refused, 2)
 
             record["x_studio_gtd"] = total_gtd
             record["x_studio_remains"] = remains
@@ -96,7 +96,7 @@ def update_vendor(data, record):
                 refused = float(supplier.get("x_studio_refused", 0) or 0)
 
                 supplier["x_studio_gtd"] = total_gtd
-                supplier["x_studio_remains"] = tons - total_gtd - refused
+                supplier["x_studio_remains"] = round(tons - total_gtd - refused, 2)
                 return
 
 def delete_supplier(data, supplier_id):
