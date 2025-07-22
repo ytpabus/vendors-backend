@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
+import os
+
+
 
 DB_PATH = Path(__file__).resolve().parent.parent / 'storage.json'
-CONFIG_PATH = Path(__file__).resolve().parent / 'config' / 'fields_config.json'
+CONFIG_PATH = Path(__file__).resolve().parent.parent / 'config' / 'fields_config.json'
 
 def load_field_config():
     if not CONFIG_PATH.exists():
