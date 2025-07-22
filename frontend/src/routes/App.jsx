@@ -221,7 +221,7 @@ function App() {
                                       <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
                                     )}
                                     <button onClick={() => {
-                                      fetch(`${BASE_URL}/webhook/delete`, {
+                                      fetch(`${BASE_URL}/webhook/delete-vendor`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: vendor.id }),

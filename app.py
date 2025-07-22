@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from utils.helpers import (
     load_data, save_data,
     update_supplier, update_vendor, delete_supplier,
-    load_field_config, save_field_config
+    delete_vendor, load_field_config, save_field_config
 )
 from utils.helpers import CONFIG_PATH
 import json
@@ -59,6 +59,20 @@ def delete_webhook():
     save_data(data)
     log_event("💾 Updated storage after delete", data)
     return jsonify({'status': 'supplier_deleted', 'deleted': deleted}), 200
+
+@app.route('/webhook/delete-vendor', methods=['POST'])
+def delete_vendor_webhook():
+    record = request.json
+    log_event("🗑️ Incoming vendor delete webhook", record)
+
+    if not record or 'id' not in record:
+        return jsonify({'error': 'Missing vendor ID'}), 400
+
+    data = load_data()
+    deleted = delete_vendor(data, record["id"])
+    save_data(data)
+    log_event("💾 Updated storage after vendor delete", data)
+    return jsonify({'status': 'vendor_deleted', 'deleted': deleted}), 200
 
 @app.route('/data', methods=['GET'])
 def get_data():

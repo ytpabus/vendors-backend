@@ -100,8 +100,22 @@ def update_vendor(data, record):
                 return
 
 def delete_supplier(data, supplier_id):
+    deleted = False
     for tab in ["Хамза", "Сергили"]:
         before = len(data[tab])
         data[tab] = [s for s in data[tab] if s["id"] != supplier_id]
         after = len(data[tab])
-        return before != after
+        if before != after:
+            deleted = True
+    return deleted
+
+def delete_vendor(data, vendor_id):
+    deleted = False
+    for tab in ["Хамза", "Сергили"]:
+        for supplier in data[tab]:
+            before = len(supplier.get("vendors", []))
+            supplier["vendors"] = [v for v in supplier.get("vendors", []) if v["id"] != vendor_id]
+            after = len(supplier["vendors"])
+            if before != after:
+                deleted = True
+    return deleted
