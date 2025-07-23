@@ -1,16 +1,17 @@
 from flask import Flask, request, jsonify
-from utils.helpers import (
-    load_data, save_data,
-    update_supplier, update_vendor, delete_supplier,
-    delete_vendor, load_field_config, save_field_config
+from utils.supabase_helpers import (
+    fetch_grouped_suppliers,
+    add_or_update_supplier,
+    add_or_update_vendor,
+    delete_supplier_and_vendors,
+    delete_vendor
 )
-from utils.helpers import CONFIG_PATH
+from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-
 CORS(app)
 
 
@@ -18,6 +19,8 @@ def log_event(label, data):
     with open("webhook.log", "a", encoding="utf-8") as f:
         f.write(f"\n🔔 {label}:\n{json.dumps(data, indent=2, ensure_ascii=False)}\n")
 
+
+# ✅ Webhook: Supplier
 @app.route('/webhook/supplier', methods=['POST'])
 def supplier_webhook():
     record = request.json
@@ -26,12 +29,14 @@ def supplier_webhook():
     if not record or 'id' not in record:
         return jsonify({'error': 'Missing supplier ID'}), 400
 
-    data = load_data()
-    updated = update_supplier(data, record)
-    save_data(data)
-    log_event("💾 Updated storage after supplier save", data)
-    return jsonify({'status': 'supplier_saved', 'updated': updated}), 200
+    try:
+        add_or_update_supplier(record)
+        return jsonify({'status': 'supplier_saved'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+
+# ✅ Webhook: Vendor
 @app.route('/webhook/vendor', methods=['POST'])
 def vendor_webhook():
     record = request.json
@@ -40,12 +45,14 @@ def vendor_webhook():
     if not record or 'id' not in record or 'x_studio_supplier_order' not in record:
         return jsonify({'error': 'Missing vendor ID or supplier ID'}), 400
 
-    data = load_data()
-    update_vendor(data, record)
-    save_data(data)
-    log_event("💾 Updated storage after vendor save", data)
-    return jsonify({'status': 'vendor_saved'}), 200
+    try:
+        add_or_update_vendor(record)
+        return jsonify({'status': 'vendor_saved'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+
+# ✅ Webhook: Delete Supplier + Vendors
 @app.route('/webhook/delete', methods=['POST'])
 def delete_webhook():
     record = request.json
@@ -54,12 +61,14 @@ def delete_webhook():
     if not record or 'id' not in record:
         return jsonify({'error': 'Missing supplier ID'}), 400
 
-    data = load_data()
-    deleted = delete_supplier(data, record["id"])
-    save_data(data)
-    log_event("💾 Updated storage after delete", data)
-    return jsonify({'status': 'supplier_deleted', 'deleted': deleted}), 200
+    try:
+        deleted = delete_supplier_and_vendors(record["id"])
+        return jsonify({'status': 'supplier_deleted', 'deleted': deleted}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+
+# ✅ Webhook: Delete Vendor
 @app.route('/webhook/delete-vendor', methods=['POST'])
 def delete_vendor_webhook():
     record = request.json
@@ -68,16 +77,24 @@ def delete_vendor_webhook():
     if not record or 'id' not in record:
         return jsonify({'error': 'Missing vendor ID'}), 400
 
-    data = load_data()
-    deleted = delete_vendor(data, record["id"])
-    save_data(data)
-    log_event("💾 Updated storage after vendor delete", data)
-    return jsonify({'status': 'vendor_deleted', 'deleted': deleted}), 200
+    try:
+        deleted = delete_vendor(record["id"])
+        return jsonify({'status': 'vendor_deleted', 'deleted': deleted}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+
+# ✅ Fetch all data, grouped by tab
 @app.route('/data', methods=['GET'])
 def get_data():
-    return jsonify(load_data())
+    try:
+        grouped = fetch_grouped_suppliers()
+        return jsonify(grouped)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+
+# ✅ Field Editor config
 @app.route("/fields-config", methods=["GET"])
 def get_fields_config():
     try:
@@ -86,12 +103,15 @@ def get_fields_config():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
 @app.route('/fields-config', methods=['POST'])
 def update_fields_config():
     config = request.json
     save_field_config(config)
     return jsonify({"status": "fields_config_updated"}), 200
 
+
+# ✅ View logs (browser-accessible)
 @app.route("/logs", methods=["GET"])
 def view_logs():
     try:
@@ -99,6 +119,7 @@ def view_logs():
             return f"<pre>{f.read()}</pre>"
     except:
         return "No logs yet."
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
