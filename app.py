@@ -1,11 +1,5 @@
 from flask import Flask, request, jsonify
-from utils.supabase_helpers import (
-    fetch_grouped_suppliers,
-    add_or_update_supplier,
-    add_or_update_vendor,
-    delete_supplier_and_vendors,
-    delete_vendor
-)
+from supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
@@ -20,52 +14,25 @@ def log_event(label, data):
         f.write(f"\n🔔 {label}:\n{json.dumps(data, indent=2, ensure_ascii=False)}\n")
 
 
-# ✅ Webhook: Supplier
-@app.route('/webhook/supplier', methods=['POST'])
+@app.route("/webhook/supplier", methods=["POST"])
 def supplier_webhook():
-    record = request.json
-    log_event("✅ Incoming supplier webhook", record)
+    record = request.get_json()
+    upsert_supplier(record)
+    return "OK"
 
-    if not record or 'id' not in record:
-        return jsonify({'error': 'Missing supplier ID'}), 400
-
-    try:
-        add_or_update_supplier(record)
-        return jsonify({'status': 'supplier_saved'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# ✅ Webhook: Vendor
-@app.route('/webhook/vendor', methods=['POST'])
+@app.route("/webhook/vendor", methods=["POST"])
 def vendor_webhook():
-    record = request.json
-    log_event("✅ Incoming vendor webhook", record)
+    record = request.get_json()
+    upsert_vendor(record)
+    return "OK"
 
-    if not record or 'id' not in record or 'x_studio_supplier_order' not in record:
-        return jsonify({'error': 'Missing vendor ID or supplier ID'}), 400
-
-    try:
-        add_or_update_vendor(record)
-        return jsonify({'status': 'vendor_saved'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# ✅ Webhook: Delete Supplier + Vendors
-@app.route('/webhook/delete', methods=['POST'])
+@app.route("/webhook/delete", methods=["POST"])
 def delete_webhook():
-    record = request.json
-    log_event("🗑️ Incoming delete webhook", record)
-
-    if not record or 'id' not in record:
-        return jsonify({'error': 'Missing supplier ID'}), 400
-
-    try:
-        deleted = delete_supplier_and_vendors(record["id"])
-        return jsonify({'status': 'supplier_deleted', 'deleted': deleted}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    record = request.get_json()
+    supplier_id = record.get("id")
+    if supplier_id:
+        delete_supplier(supplier_id)
+    return "OK"
 
 
 # ✅ Webhook: Delete Vendor
@@ -84,14 +51,10 @@ def delete_vendor_webhook():
         return jsonify({'error': str(e)}), 500
 
 
-# ✅ Fetch all data, grouped by tab
-@app.route('/data', methods=['GET'])
+@app.route("/data")
 def get_data():
-    try:
-        grouped = fetch_grouped_suppliers()
-        return jsonify(grouped)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    grouped = fetch_all_grouped()
+    return jsonify(grouped)
 
 
 # ✅ Field Editor config

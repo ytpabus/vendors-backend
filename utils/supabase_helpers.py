@@ -1,69 +1,59 @@
-from utils.supabase_client import supabase
-from collections import defaultdict
+from supabase import create_client, Client
 
-# ⚙️ Group suppliers into "Хамза" and "Сергили"
-def fetch_grouped_suppliers():
-    suppliers_response = supabase.table("suppliers").select("*").execute()
-    vendors_response = supabase.table("vendors").select("*").execute()
+SUPABASE_URL = "<https://qwtcqnaqhfsjwdnlqyds.supabase.co>"
+SUPABASE_KEY = "<eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dGNxbmFxaGZzandkbmxxeWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTAzNTIsImV4cCI6MjA2ODc2NjM1Mn0.yXF1vpaZmUcZWToOw-GccrNYCWuHh2Wa-zieeuk6kUY>"
 
-    if not suppliers_response.data or not vendors_response.data:
-        return {"Хамза": [], "Сергили": []}
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    suppliers = suppliers_response.data
-    vendors = vendors_response.data
+def fetch_all_grouped():
+    suppliers = supabase.table("suppliers").select("*").execute().data
+    vendors = supabase.table("vendors").select("*").execute().data
 
-    # Attach vendors to suppliers
-    supplier_map = {s["id"]: s for s in suppliers}
-    for v in vendors:
-        supplier_id = v.get("x_studio_supplier_order")
-        if supplier_id in supplier_map:
-            supplier_map[supplier_id].setdefault("vendors", []).append(v)
-
-    # Split by tab name (use station name or station ID fallback)
-    grouped = defaultdict(list)
-    for supplier in supplier_map.values():
-        station_name = supplier.get("x_studio_name_station_to")
-        station_id = supplier.get("x_studio_station_to")
-
-        if station_name in ["Хамза", "Сергили"]:
-            grouped[station_name].append(supplier)
-        elif station_id == 2:
-            grouped["Хамза"].append(supplier)
-        elif station_id == 1:
-            grouped["Сергили"].append(supplier)
-        # else: do nothing — skip unassignable
+    # Build { tab: [suppliers...] }, each supplier gets its vendor sublist
+    grouped = {"Хамза": [], "Сергили": []}
+    for sup in suppliers:
+        sup_data = sup["data"]
+        sup_data["id"] = sup["id"]
+        sup_data["vendors"] = [
+            {**v["data"], "id": v["id"]}
+            for v in vendors if v["supplier_id"] == sup["id"]
+        ]
+        tab = sup.get("tab") or "Хамза"
+        grouped.setdefault(tab, []).append(sup_data)
 
     return grouped
 
-
-# ✅ Add or update supplier
-def add_or_update_supplier(record):
-    existing = supabase.table("suppliers").select("id").eq("id", record["id"]).execute()
-    if existing.data:
-        supabase.table("suppliers").update(record).eq("id", record["id"]).execute()
+def upsert_supplier(record):
+    sup_id = record.get("id")
+    tab = record.get("x_studio_name_station_to")  # Or however you determine tab
+    if tab == "Сергили":
+        tab_key = "Сергили"
     else:
-        supabase.table("suppliers").insert(record).execute()
+        tab_key = "Хамза"
 
+    # Remove vendor list if present
+    record.pop("vendors", None)
 
-# ✅ Add or update vendor
-def add_or_update_vendor(record):
-    existing = supabase.table("vendors").select("id").eq("id", record["id"]).execute()
-    if existing.data:
-        supabase.table("vendors").update(record).eq("id", record["id"]).execute()
-    else:
-        supabase.table("vendors").insert(record).execute()
+    # UPSERT by ID
+    supabase.table("suppliers").upsert({
+        "id": sup_id,
+        "tab": tab_key,
+        "data": record
+    }).execute()
 
+def upsert_vendor(record):
+    vendor_id = record.get("id")
+    supplier_id = record.get("x_studio_supplier_order")
 
-# ✅ Delete vendor
-def delete_vendor(vendor_id):
-    result = supabase.table("vendors").delete().eq("id", vendor_id).execute()
-    return result.data
+    # Make sure GTD is float
+    record["x_studio_gtd"] = float(record.get("x_studio_gtd", 0) or 0)
 
+    supabase.table("vendors").upsert({
+        "id": vendor_id,
+        "supplier_id": supplier_id,
+        "data": record
+    }).execute()
 
-# ✅ Delete supplier and all related vendors
-def delete_supplier_and_vendors(supplier_id):
-    # Delete all vendors first
-    supabase.table("vendors").delete().eq("x_studio_supplier_order", supplier_id).execute()
-    # Then delete the supplier
-    result = supabase.table("suppliers").delete().eq("id", supplier_id).execute()
-    return result.data
+def delete_supplier(supplier_id):
+    supabase.table("vendors").delete().eq("supplier_id", supplier_id).execute()
+    supabase.table("suppliers").delete().eq("id", supplier_id).execute()
