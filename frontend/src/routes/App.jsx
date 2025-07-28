@@ -15,7 +15,10 @@ function App() {
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
   useEffect(() => {
-    fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+    fetch(`${BASE_URL}/data`)
+      .then(res => res.json())
+      .then(setData);
+
     fetch(`${BASE_URL}/fields-config`)
       .then(res => {
         if (!res.ok) throw new Error(`Failed to fetch fields: ${res.status}`);
@@ -56,22 +59,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newVendor)
-    }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].map(supplier =>
-          supplier.id === supplierId
-            ? { ...supplier, vendors: [...(supplier.vendors || []), newVendor] }
-            : supplier
-        );
-        return updated;
-      });
-      setNewVendors(prev => {
-        const updated = { ...prev };
-        delete updated[supplierId];
-        return updated;
-      });
-    });
+    }).then(() => window.location.reload());
   };
 
   const startEditVendor = (vendorId, supplierId, vendorData) => {
@@ -82,31 +70,11 @@ function App() {
   };
 
   const saveEditedVendor = (vendorId) => {
-    const updatedVendor = editingVendors[vendorId];
     fetch(`${BASE_URL}/webhook/vendor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedVendor)
-    }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].map(supplier => {
-          if (supplier.id !== updatedVendor.x_studio_supplier_order) return supplier;
-          return {
-            ...supplier,
-            vendors: supplier.vendors.map(v =>
-              v.id === vendorId ? { ...v, ...updatedVendor } : v
-            )
-          };
-        });
-        return updated;
-      });
-      setEditingVendors(prev => {
-        const updated = { ...prev };
-        delete updated[vendorId];
-        return updated;
-      });
-    });
+      body: JSON.stringify(editingVendors[vendorId])
+    }).then(() => window.location.reload());
   };
 
   const handleEditVendorChange = (vendorId, field, value) => {
@@ -131,22 +99,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingSuppliers[supplierId])
-    }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].map(supplier =>
-          supplier.id === supplierId
-            ? { ...supplier, ...editingSuppliers[supplierId] }
-            : supplier
-        );
-        return updated;
-      });
-      setEditingSuppliers(prev => {
-        const updated = { ...prev };
-        delete updated[supplierId];
-        return updated;
-      });
-    });
+    }).then(() => window.location.reload());
   };
 
   const deleteSupplier = (supplierId) => {
@@ -154,34 +107,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: supplierId })
-    }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].filter(supplier => supplier.id !== supplierId);
-        return updated;
-      });
-    });
-  };
-
-  const deleteVendor = (supplierId, vendorId) => {
-    fetch(`${BASE_URL}/webhook/delete-vendor`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: vendorId })
-    }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].map(supplier =>
-          supplier.id === supplierId
-            ? {
-                ...supplier,
-                vendors: supplier.vendors.filter(v => v.id !== vendorId)
-              }
-            : supplier
-        );
-        return updated;
-      });
-    });
+    }).then(() => window.location.reload());
   };
 
   return (
@@ -352,9 +278,6 @@ function App() {
       )}
     </div>
   );
-}
-
-export default App;
 }
 
 export default App;
