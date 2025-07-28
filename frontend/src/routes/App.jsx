@@ -4,6 +4,12 @@ import './App.css';
 
 export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
+const USERS = {
+  xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
+  sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
+  admin: { password: 'Adm!nPower9', tab: 'all' },
+};
+
 function App() {
   const [tab, setTab] = useState('Хамза');
   const [data, setData] = useState([]);
@@ -13,8 +19,13 @@ function App() {
   const [newVendors, setNewVendors] = useState({});
   const [editingVendors, setEditingVendors] = useState({});
   const [editingSuppliers, setEditingSuppliers] = useState({});
+  const [user, setUser] = useState(localStorage.getItem('user') || null);
+
+  const isAdmin = user === 'admin';
+  const allowedTab = user === 'admin' ? tab : USERS[user]?.tab;
 
   useEffect(() => {
+    if (!user) return;
     fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
       .then(res => {
@@ -26,9 +37,41 @@ function App() {
         console.error("❌ Could not load fields config:", err);
         alert("Unable to load field configuration. Check backend connection.");
       });
-  }, []);
+  }, [user]);
 
-  const filtered = data[tab] || [];
+  if (!user) {
+    return (
+      <div className="login-screen">
+        <h2>Login</h2>
+        <form onSubmit={e => {
+          e.preventDefault();
+          const username = e.target.username.value;
+          const password = e.target.password.value;
+          if (USERS[username] && USERS[username].password === password) {
+            localStorage.setItem('user', username);
+            setUser(username);
+            setTab(username === 'admin' ? 'Хамза' : USERS[username].tab);
+          } else {
+            alert("Invalid credentials");
+          }
+        }}>
+          <input name="username" placeholder="Username" autoFocus />
+          <input name="password" type="password" placeholder="Password" />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    );
+  }
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    setTab('Хамза');
+  };
+
+  const filtered = (data[tab] || []).filter(
+    record => allowedTab === 'all' || record.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1)
+  );
 
   const toggleExpand = (supplierId) => {
     setExpandedSuppliers(prev =>
@@ -56,6 +99,9 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newVendor)
+    }).then(() => {
+      setNewVendors(prev => ({ ...prev, [supplierId]: {} }));
+      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
@@ -71,6 +117,13 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingVendors[vendorId])
+    }).then(() => {
+      setEditingVendors(prev => {
+        const updated = { ...prev };
+        delete updated[vendorId];
+        return updated;
+      });
+      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
@@ -96,6 +149,13 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingSuppliers[supplierId])
+    }).then(() => {
+      setEditingSuppliers(prev => {
+        const updated = { ...prev };
+        delete updated[supplierId];
+        return updated;
+      });
+      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
@@ -105,9 +165,26 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: supplierId })
     }).then(() => {
+      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+    });
+  };
+
+  const deleteVendor = (supplierId, vendorId) => {
+    fetch(`${BASE_URL}/webhook/delete-vendor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: vendorId })
+    }).then(() => {
       setData(prev => {
         const updated = { ...prev };
-        updated[tab] = updated[tab].filter(s => s.id !== supplierId);
+        updated[tab] = updated[tab].map(supplier =>
+          supplier.id === supplierId
+            ? {
+                ...supplier,
+                vendors: supplier.vendors.filter(v => v.id !== vendorId)
+              }
+            : supplier
+        );
         return updated;
       });
     });
@@ -116,9 +193,19 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
-        <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+        {user === 'admin' && (
+          <>
+            <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
+            <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+          </>
+        )}
+        {user !== 'admin' && <h3>{allowedTab}</h3>}
+        <button onClick={logout} style={{ marginLeft: 'auto' }}>🚪 Logout</button>
       </div>
+
+      {isAdmin && (
+        <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
+      )}
 
       {filtered.map((record, index) => {
         const hasMissingLabKley = (record.vendors || []).some(
@@ -144,13 +231,8 @@ function App() {
                     const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
                     let style = {};
 
-                    if (field.key === 'x_studio_remains' && value > 0) {
-                      style.backgroundColor = '#fdd';
-                    }
-
-                    if (field.key === 'x_studio_kley' && hasMissingLabKley) {
-                      style.backgroundColor = '#fdd';
-                    }
+                    if (field.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
+                    if (field.key === 'x_studio_kley' && hasMissingLabKley) style.backgroundColor = '#fdd';
 
                     return (
                       <td key={field.key} className={`col-${field.key}`} style={style}>
@@ -226,26 +308,7 @@ function App() {
                                   ) : (
                                     <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
                                   )}
-                                  <button onClick={() => {
-                                    fetch(`${BASE_URL}/webhook/delete-vendor`, {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ id: vendor.id }),
-                                    }).then(() => {
-                                      setData(prev => {
-                                        const updated = { ...prev };
-                                        updated[tab] = updated[tab].map(supplier =>
-                                          supplier.id === record.id
-                                            ? {
-                                                ...supplier,
-                                                vendors: supplier.vendors.filter(v => v.id !== vendor.id)
-                                              }
-                                            : supplier
-                                        );
-                                        return updated;
-                                      });
-                                    });
-                                  }}>🗑️</button>
+                                  <button onClick={() => deleteVendor(record.id, vendor.id)}>🗑️</button>
                                 </td>
                               )}
                             </tr>
@@ -259,7 +322,7 @@ function App() {
             )}
 
             {adminMode && (
-              <div style={{ marginTop: '10px', marginLeft: '10px' }}>
+              <div className="vendor-add-form">
                 <strong>➕ Add New Vendor Order</strong>
                 <table className="record-table vendor-new">
                   <tbody>
@@ -268,6 +331,7 @@ function App() {
                         <td key={field.key}>
                           <input
                             placeholder={field.label}
+                            value={(newVendors[record.id]?.[field.key]) || ''}
                             onChange={(e) => handleVendorChange(record.id, field.key, e.target.value)}
                           />
                         </td>
@@ -282,8 +346,6 @@ function App() {
         );
       })}
 
-      <hr />
-      <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
       {adminMode && (
         <>
           <h2>Admin Field Editor</h2>
