@@ -184,7 +184,177 @@ function App() {
     });
   };
 
-  return <div>🧠 React state logic ready. Copy UI rendering portion from your original App.jsx.</div>;
+  return (
+    <div className="app-container">
+      <div className="tab-buttons">
+        <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
+        <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+      </div>
+
+      {filtered.map((record, index) => {
+        const hasMissingLabKley = (record.vendors || []).some(
+          v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
+        );
+        const isExpanded = expandedSuppliers.includes(record.id);
+        const isEditing = !!editingSuppliers[record.id];
+
+        return (
+          <div key={index} className={`supplier-card ${isExpanded ? 'expanded' : ''}`}>
+            <table className="record-table vendor-new">
+              <thead>
+                <tr>
+                  {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
+                    <th key={field.key}>{field.label}</th>
+                  ))}
+                  {adminMode && <th>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => {
+                    const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
+                    let style = {};
+
+                    if (field.key === 'x_studio_remains' && value > 0) {
+                      style.backgroundColor = '#fdd';
+                    }
+
+                    if (field.key === 'x_studio_kley' && hasMissingLabKley) {
+                      style.backgroundColor = '#fdd';
+                    }
+
+                    return (
+                      <td key={field.key} className={`col-${field.key}`} style={style}>
+                        {isEditing ? (
+                          <input
+                            value={value || ''}
+                            onChange={(e) => setEditingSuppliers(prev => ({
+                              ...prev,
+                              [record.id]: {
+                                ...prev[record.id],
+                                [field.key]: e.target.value
+                              }
+                            }))}
+                          />
+                        ) : value}
+                      </td>
+                    );
+                  })}
+                  {adminMode && (
+                    <td>
+                      {isEditing ? (
+                        <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
+                      ) : (
+                        <button onClick={() => startEditSupplier(record.id, record)}>✏️</button>
+                      )}
+                      <button onClick={() => deleteSupplier(record.id)}>🗑️</button>
+                    </td>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+
+            {record.vendors && record.vendors.length > 0 && (
+              <>
+                <button onClick={() => toggleExpand(record.id)}>{isExpanded ? '🔼' : '🔽'}</button>
+                {isExpanded && (
+                  <div style={{ marginTop: '1px', marginLeft: '10px', fontSize: '0.9em' }}>
+                    <div className="vendor-table-wrapper">
+                      <table className="record-table vendor-new">
+                        <thead>
+                          <tr>
+                            {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
+                              <th key={field.key}>{field.label}</th>
+                            ))}
+                            {adminMode && <th>Actions</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {record.vendors.map((vendor, vIdx) => {
+                            const isEditingVendor = editingVendors[vendor.id];
+                            return (
+                              <tr key={vIdx}>
+                                {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => {
+                                  const value = isEditingVendor ? editingVendors[vendor.id][field.key] : vendor[field.key];
+                                  let style = {};
+                                  if (field.key === 'x_studio_lab_kley') {
+                                    style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
+                                  }
+                                  return (
+                                    <td key={field.key} style={style}>
+                                      {isEditingVendor ? (
+                                        <input
+                                          value={value || ''}
+                                          onChange={(e) => handleEditVendorChange(vendor.id, field.key, e.target.value)}
+                                        />
+                                      ) : value}
+                                    </td>
+                                  );
+                                })}
+                                {adminMode && (
+                                  <td>
+                                    {isEditingVendor ? (
+                                      <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
+                                    ) : (
+                                      <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
+                                    )}
+                                    <button onClick={() => {
+                                      fetch(`${BASE_URL}/webhook/delete-vendor`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: vendor.id }),
+                                      }).then(() => window.location.reload());
+                                    }}>🗑️</button>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {adminMode && (
+              <div style={{ marginTop: '10px', marginLeft: '10px' }}>
+                <strong>➕ Add New Vendor Order</strong>
+                <table className="record-table vendor-new">
+                  <tbody>
+                    <tr>
+                      {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
+                        <td key={field.key}>
+                          <input
+                            placeholder={field.label}
+                            onChange={(e) => handleVendorChange(record.id, field.key, e.target.value)}
+                          />
+                        </td>
+                      ))}
+                      <td><button onClick={() => saveNewVendor(record.id)}>Save</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <hr />
+      <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
+      {adminMode && (
+        <>
+          <h2>Admin Field Editor</h2>
+          <FieldEditor fields={fields} setFields={setFields} />
+        </>
+      )}
+    </div>
+  );
+}
+
+export default App;
 }
 
 export default App;
