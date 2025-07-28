@@ -203,6 +203,7 @@ function App() {
         <button onClick={logout} style={{ marginLeft: 'auto' }}>🚪 Logout</button>
       </div>
 
+      <hr />
       {isAdmin && (
         <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
       )}
