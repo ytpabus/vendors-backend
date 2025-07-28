@@ -225,12 +225,26 @@ function App() {
                                       <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
                                     )}
                                     <button onClick={() => {
-                                      fetch(`${BASE_URL}/webhook/delete-vendor`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ id: vendor.id }),
-                                      }).then(() => window.location.reload());
-                                    }}>🗑️</button>
+  fetch(`${BASE_URL}/webhook/delete-vendor`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: vendor.id }),
+  }).then(() => {
+    setData(prev => {
+      const updated = { ...prev };
+      updated[tab] = updated[tab].map(supplier =>
+        supplier.id === record.id
+          ? {
+              ...supplier,
+              vendors: supplier.vendors.filter(v => v.id !== vendor.id)
+            }
+          : supplier
+      );
+      return updated;
+    });
+  });
+}}>🗑️</button>
+
                                   </td>
                                 )}
                               </tr>
