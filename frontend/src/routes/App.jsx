@@ -5,7 +5,13 @@ import './App.css';
 export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 function App() {
-  const [tab, setTab] = useState('Хамза');
+  const queryParams = new URLSearchParams(window.location.search);
+  const user = queryParams.get("user");
+
+  const isAdmin = user === "admin";
+  const userTab = user === "xamza" ? "Хамза" : user === "sergili" ? "Сергили" : null;
+
+  const [tab, setTab] = useState(userTab || "Хамза");
   const [data, setData] = useState([]);
   const [fields, setFields] = useState([]);
   const [adminMode, setAdminMode] = useState(false);
@@ -15,10 +21,7 @@ function App() {
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
   useEffect(() => {
-    fetch(`${BASE_URL}/data`)
-      .then(res => res.json())
-      .then(setData);
-
+    fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
       .then(res => {
         if (!res.ok) throw new Error(`Failed to fetch fields: ${res.status}`);
@@ -30,6 +33,10 @@ function App() {
         alert("Unable to load field configuration. Check backend connection.");
       });
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin && userTab) setTab(userTab);
+  }, [isAdmin, userTab]);
 
   const filtered = data[tab] || [];
 
@@ -113,8 +120,8 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
-        <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+        <button disabled={!isAdmin} className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
+        <button disabled={!isAdmin} className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
       </div>
 
       {filtered.map((record, index) => {
@@ -132,7 +139,7 @@ function App() {
                   {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
                     <th key={field.key}>{field.label}</th>
                   ))}
-                  {adminMode && <th>Actions</th>}
+                  {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -141,13 +148,8 @@ function App() {
                     const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
                     let style = {};
 
-                    if (field.key === 'x_studio_remains' && value > 0) {
-                      style.backgroundColor = '#fdd';
-                    }
-
-                    if (field.key === 'x_studio_kley' && hasMissingLabKley) {
-                      style.backgroundColor = '#fdd';
-                    }
+                    if (field.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
+                    if (field.key === 'x_studio_kley' && hasMissingLabKley) style.backgroundColor = '#fdd';
 
                     return (
                       <td key={field.key} className={`col-${field.key}`} style={style}>
@@ -166,7 +168,7 @@ function App() {
                       </td>
                     );
                   })}
-                  {adminMode && (
+                  {isAdmin && (
                     <td>
                       {isEditing ? (
                         <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
@@ -192,7 +194,7 @@ function App() {
                             {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
                               <th key={field.key}>{field.label}</th>
                             ))}
-                            {adminMode && <th>Actions</th>}
+                            {isAdmin && <th>Actions</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -217,7 +219,7 @@ function App() {
                                     </td>
                                   );
                                 })}
-                                {adminMode && (
+                                {isAdmin && (
                                   <td>
                                     {isEditingVendor ? (
                                       <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
@@ -225,26 +227,25 @@ function App() {
                                       <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
                                     )}
                                     <button onClick={() => {
-  fetch(`${BASE_URL}/webhook/delete-vendor`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: vendor.id }),
-  }).then(() => {
-    setData(prev => {
-      const updated = { ...prev };
-      updated[tab] = updated[tab].map(supplier =>
-        supplier.id === record.id
-          ? {
-              ...supplier,
-              vendors: supplier.vendors.filter(v => v.id !== vendor.id)
-            }
-          : supplier
-      );
-      return updated;
-    });
-  });
-}}>🗑️</button>
-
+                                      fetch(`${BASE_URL}/webhook/delete-vendor`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: vendor.id }),
+                                      }).then(() => {
+                                        setData(prev => {
+                                          const updated = { ...prev };
+                                          updated[tab] = updated[tab].map(supplier =>
+                                            supplier.id === record.id
+                                              ? {
+                                                  ...supplier,
+                                                  vendors: supplier.vendors.filter(v => v.id !== vendor.id)
+                                                }
+                                              : supplier
+                                          );
+                                          return updated;
+                                        });
+                                      });
+                                    }}>🗑️</button>
                                   </td>
                                 )}
                               </tr>
@@ -258,7 +259,7 @@ function App() {
               </>
             )}
 
-            {adminMode && (
+            {isAdmin && (
               <div style={{ marginTop: '10px', marginLeft: '10px' }}>
                 <strong>➕ Add New Vendor Order</strong>
                 <table className="record-table vendor-new">
@@ -283,11 +284,15 @@ function App() {
       })}
 
       <hr />
-      <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
-      {adminMode && (
+      {isAdmin && (
         <>
-          <h2>Admin Field Editor</h2>
-          <FieldEditor fields={fields} setFields={setFields} />
+          <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
+          {adminMode && (
+            <>
+              <h2>Admin Field Editor</h2>
+              <FieldEditor fields={fields} setFields={setFields} />
+            </>
+          )}
         </>
       )}
     </div>
