@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier
+from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
