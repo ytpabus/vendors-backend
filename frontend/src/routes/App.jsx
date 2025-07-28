@@ -5,8 +5,7 @@ import './App.css';
 export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 function App() {
-  const [tab, setTab] = useState('');
-  const [role, setRole] = useState(localStorage.getItem('role') || '');
+  const [tab, setTab] = useState('Хамза');
   const [data, setData] = useState([]);
   const [fields, setFields] = useState([]);
   const [adminMode, setAdminMode] = useState(false);
@@ -15,11 +14,7 @@ function App() {
   const [editingVendors, setEditingVendors] = useState({});
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
-  const allowedTabs = role === 'admin' ? ['Хамза', 'Сергили'] : [role === 'xamza' ? 'Хамза' : 'Сергили'];
-
   useEffect(() => {
-    if (!tab && allowedTabs.length > 0) setTab(allowedTabs[0]);
-
     fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
       .then(res => {
@@ -31,28 +26,7 @@ function App() {
         console.error("❌ Could not load fields config:", err);
         alert("Unable to load field configuration. Check backend connection.");
       });
-  }, [role]);
-
-  const login = (username, password) => {
-    const credentials = {
-      xamza: 'Z8r@Hamza1',
-      sergili: 'S3r#Gili2',
-      admin: 'Adm!nPower9'
-    };
-    if (credentials[username] === password) {
-      localStorage.setItem('role', username);
-      setRole(username);
-      setTab(username === 'admin' ? 'Хамза' : username === 'xamza' ? 'Хамза' : 'Сергили');
-    } else {
-      alert('Invalid login');
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('role');
-    setRole('');
-    setTab('');
-  };
+  }, []);
 
   const filtered = data[tab] || [];
 
@@ -82,7 +56,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newVendor)
-    }).then(() => window.location.reload());
+    });
   };
 
   const startEditVendor = (vendorId, supplierId, vendorData) => {
@@ -97,7 +71,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingVendors[vendorId])
-    }).then(() => window.location.reload());
+    });
   };
 
   const handleEditVendorChange = (vendorId, field, value) => {
@@ -122,7 +96,7 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingSuppliers[supplierId])
-    }).then(() => window.location.reload());
+    });
   };
 
   const deleteSupplier = (supplierId) => {
@@ -130,32 +104,20 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: supplierId })
-    }).then(() => window.location.reload());
+    }).then(() => {
+      setData(prev => {
+        const updated = { ...prev };
+        updated[tab] = updated[tab].filter(s => s.id !== supplierId);
+        return updated;
+      });
+    });
   };
-
-  if (!role) {
-    return (
-      <div className="login-screen">
-        <h2>Login</h2>
-        <input placeholder="Username" id="username" />
-        <input placeholder="Password" id="password" type="password" />
-        <button onClick={() => login(
-          document.getElementById('username').value,
-          document.getElementById('password').value
-        )}>Login</button>
-      </div>
-    );
-  }
 
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {allowedTabs.map(tabName => (
-          <button key={tabName} className={tab === tabName ? 'selected' : ''} onClick={() => setTab(tabName)}>
-            {tabName}
-          </button>
-        ))}
-        <button style={{ float: 'right' }} onClick={logout}>🚪 Logout</button>
+        <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
+        <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
       </div>
 
       {filtered.map((record, index) => {
@@ -173,7 +135,7 @@ function App() {
                   {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
                     <th key={field.key}>{field.label}</th>
                   ))}
-                  {role === 'admin' && <th>Actions</th>}
+                  {adminMode && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -182,8 +144,13 @@ function App() {
                     const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
                     let style = {};
 
-                    if (field.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
-                    if (field.key === 'x_studio_kley' && hasMissingLabKley) style.backgroundColor = '#fdd';
+                    if (field.key === 'x_studio_remains' && value > 0) {
+                      style.backgroundColor = '#fdd';
+                    }
+
+                    if (field.key === 'x_studio_kley' && hasMissingLabKley) {
+                      style.backgroundColor = '#fdd';
+                    }
 
                     return (
                       <td key={field.key} className={`col-${field.key}`} style={style}>
@@ -202,7 +169,7 @@ function App() {
                       </td>
                     );
                   })}
-                  {role === 'admin' && (
+                  {adminMode && (
                     <td>
                       {isEditing ? (
                         <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
@@ -220,67 +187,78 @@ function App() {
               <>
                 <button onClick={() => toggleExpand(record.id)}>{isExpanded ? '🔼' : '🔽'}</button>
                 {isExpanded && (
-                  <div style={{ marginTop: '1px', marginLeft: '10px', fontSize: '0.9em' }}>
-                    <div className="vendor-table-wrapper">
-                      <table className="record-table vendor-new">
-                        <thead>
-                          <tr>
-                            {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
-                              <th key={field.key}>{field.label}</th>
-                            ))}
-                            {role === 'admin' && <th>Actions</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {record.vendors.map((vendor, vIdx) => {
-                            const isEditingVendor = editingVendors[vendor.id];
-                            return (
-                              <tr key={vIdx}>
-                                {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => {
-                                  const value = isEditingVendor ? editingVendors[vendor.id][field.key] : vendor[field.key];
-                                  let style = {};
-                                  if (field.key === 'x_studio_lab_kley') {
-                                    style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
-                                  }
-                                  return (
-                                    <td key={field.key} style={style}>
-                                      {isEditingVendor ? (
-                                        <input
-                                          value={value || ''}
-                                          onChange={(e) => handleEditVendorChange(vendor.id, field.key, e.target.value)}
-                                        />
-                                      ) : value}
-                                    </td>
-                                  );
-                                })}
-                                {role === 'admin' && (
-                                  <td>
+                  <div className="vendor-table-wrapper">
+                    <table className="record-table vendor-new">
+                      <thead>
+                        <tr>
+                          {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
+                            <th key={field.key}>{field.label}</th>
+                          ))}
+                          {adminMode && <th>Actions</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {record.vendors.map((vendor, vIdx) => {
+                          const isEditingVendor = editingVendors[vendor.id];
+                          return (
+                            <tr key={vIdx}>
+                              {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => {
+                                const value = isEditingVendor ? editingVendors[vendor.id][field.key] : vendor[field.key];
+                                let style = {};
+                                if (field.key === 'x_studio_lab_kley') {
+                                  style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
+                                }
+                                return (
+                                  <td key={field.key} style={style}>
                                     {isEditingVendor ? (
-                                      <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
-                                    ) : (
-                                      <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
-                                    )}
-                                    <button onClick={() => {
-                                      fetch(`${BASE_URL}/webhook/delete-vendor`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ id: vendor.id }),
-                                      }).then(() => window.location.reload());
-                                    }}>🗑️</button>
+                                      <input
+                                        value={value || ''}
+                                        onChange={(e) => handleEditVendorChange(vendor.id, field.key, e.target.value)}
+                                      />
+                                    ) : value}
                                   </td>
-                                )}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                );
+                              })}
+                              {adminMode && (
+                                <td>
+                                  {isEditingVendor ? (
+                                    <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
+                                  ) : (
+                                    <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
+                                  )}
+                                  <button onClick={() => {
+                                    fetch(`${BASE_URL}/webhook/delete-vendor`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: vendor.id }),
+                                    }).then(() => {
+                                      setData(prev => {
+                                        const updated = { ...prev };
+                                        updated[tab] = updated[tab].map(supplier =>
+                                          supplier.id === record.id
+                                            ? {
+                                                ...supplier,
+                                                vendors: supplier.vendors.filter(v => v.id !== vendor.id)
+                                              }
+                                            : supplier
+                                        );
+                                        return updated;
+                                      });
+                                    });
+                                  }}>🗑️</button>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </>
             )}
 
-            {role === 'admin' && (
+            {adminMode && (
               <div style={{ marginTop: '10px', marginLeft: '10px' }}>
                 <strong>➕ Add New Vendor Order</strong>
                 <table className="record-table vendor-new">
@@ -305,15 +283,11 @@ function App() {
       })}
 
       <hr />
-      {role === 'admin' && (
+      <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
+      {adminMode && (
         <>
-          <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
-          {adminMode && (
-            <>
-              <h2>Admin Field Editor</h2>
-              <FieldEditor fields={fields} setFields={setFields} />
-            </>
-          )}
+          <h2>Admin Field Editor</h2>
+          <FieldEditor fields={fields} setFields={setFields} />
         </>
       )}
     </div>
