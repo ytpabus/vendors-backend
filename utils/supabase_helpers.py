@@ -57,3 +57,7 @@ def upsert_vendor(record):
 def delete_supplier(supplier_id):
     supabase.table("vendors").delete().eq("supplier_id", supplier_id).execute()
     supabase.table("suppliers").delete().eq("id", supplier_id).execute()
+    
+def delete_vendor(vendor_id):
+    res = supabase.table("vendors").delete().eq("id", vendor_id).execute()
+    return res.data
