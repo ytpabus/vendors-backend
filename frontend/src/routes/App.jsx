@@ -5,13 +5,8 @@ import './App.css';
 export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 function App() {
-  const queryParams = new URLSearchParams(window.location.search);
-  const user = queryParams.get("user");
-
-  const isAdmin = user === "admin";
-  const userTab = user === "xamza" ? "Хамза" : user === "sergili" ? "Сергили" : null;
-
-  const [tab, setTab] = useState(userTab || "Хамза");
+  const [tab, setTab] = useState('');
+  const [role, setRole] = useState(localStorage.getItem('role') || '');
   const [data, setData] = useState([]);
   const [fields, setFields] = useState([]);
   const [adminMode, setAdminMode] = useState(false);
@@ -20,7 +15,11 @@ function App() {
   const [editingVendors, setEditingVendors] = useState({});
   const [editingSuppliers, setEditingSuppliers] = useState({});
 
+  const allowedTabs = role === 'admin' ? ['Хамза', 'Сергили'] : [role === 'xamza' ? 'Хамза' : 'Сергили'];
+
   useEffect(() => {
+    if (!tab && allowedTabs.length > 0) setTab(allowedTabs[0]);
+
     fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
       .then(res => {
@@ -32,11 +31,28 @@ function App() {
         console.error("❌ Could not load fields config:", err);
         alert("Unable to load field configuration. Check backend connection.");
       });
-  }, []);
+  }, [role]);
 
-  useEffect(() => {
-    if (!isAdmin && userTab) setTab(userTab);
-  }, [isAdmin, userTab]);
+  const login = (username, password) => {
+    const credentials = {
+      xamza: 'Z8r@Hamza1',
+      sergili: 'S3r#Gili2',
+      admin: 'Adm!nPower9'
+    };
+    if (credentials[username] === password) {
+      localStorage.setItem('role', username);
+      setRole(username);
+      setTab(username === 'admin' ? 'Хамза' : username === 'xamza' ? 'Хамза' : 'Сергили');
+    } else {
+      alert('Invalid login');
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('role');
+    setRole('');
+    setTab('');
+  };
 
   const filtered = data[tab] || [];
 
@@ -117,11 +133,29 @@ function App() {
     }).then(() => window.location.reload());
   };
 
+  if (!role) {
+    return (
+      <div className="login-screen">
+        <h2>Login</h2>
+        <input placeholder="Username" id="username" />
+        <input placeholder="Password" id="password" type="password" />
+        <button onClick={() => login(
+          document.getElementById('username').value,
+          document.getElementById('password').value
+        )}>Login</button>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        <button disabled={!isAdmin} className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
-        <button disabled={!isAdmin} className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+        {allowedTabs.map(tabName => (
+          <button key={tabName} className={tab === tabName ? 'selected' : ''} onClick={() => setTab(tabName)}>
+            {tabName}
+          </button>
+        ))}
+        <button style={{ float: 'right' }} onClick={logout}>🚪 Logout</button>
       </div>
 
       {filtered.map((record, index) => {
@@ -139,7 +173,7 @@ function App() {
                   {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
                     <th key={field.key}>{field.label}</th>
                   ))}
-                  {isAdmin && <th>Actions</th>}
+                  {role === 'admin' && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -168,7 +202,7 @@ function App() {
                       </td>
                     );
                   })}
-                  {isAdmin && (
+                  {role === 'admin' && (
                     <td>
                       {isEditing ? (
                         <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
@@ -194,7 +228,7 @@ function App() {
                             {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
                               <th key={field.key}>{field.label}</th>
                             ))}
-                            {isAdmin && <th>Actions</th>}
+                            {role === 'admin' && <th>Actions</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -219,7 +253,7 @@ function App() {
                                     </td>
                                   );
                                 })}
-                                {isAdmin && (
+                                {role === 'admin' && (
                                   <td>
                                     {isEditingVendor ? (
                                       <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
@@ -231,20 +265,7 @@ function App() {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: vendor.id }),
-                                      }).then(() => {
-                                        setData(prev => {
-                                          const updated = { ...prev };
-                                          updated[tab] = updated[tab].map(supplier =>
-                                            supplier.id === record.id
-                                              ? {
-                                                  ...supplier,
-                                                  vendors: supplier.vendors.filter(v => v.id !== vendor.id)
-                                                }
-                                              : supplier
-                                          );
-                                          return updated;
-                                        });
-                                      });
+                                      }).then(() => window.location.reload());
                                     }}>🗑️</button>
                                   </td>
                                 )}
@@ -259,7 +280,7 @@ function App() {
               </>
             )}
 
-            {isAdmin && (
+            {role === 'admin' && (
               <div style={{ marginTop: '10px', marginLeft: '10px' }}>
                 <strong>➕ Add New Vendor Order</strong>
                 <table className="record-table vendor-new">
@@ -284,7 +305,7 @@ function App() {
       })}
 
       <hr />
-      {isAdmin && (
+      {role === 'admin' && (
         <>
           <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode</button>
           {adminMode && (
