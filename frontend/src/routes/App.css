@@ -27,7 +27,7 @@ h1 {
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-/* Make tables scrollable on mobile */
+/* Scroll wrapper for tables */
 .supplier-card .record-table,
 .vendor-table-wrapper .record-table,
 table.vendor-new {
@@ -43,6 +43,7 @@ table.vendor-new {
   margin-top: 10px;
 }
 
+/* Table content */
 .record-table th,
 .record-table td,
 .vendor-new td {
@@ -64,6 +65,7 @@ table.vendor-new {
   z-index: 1;
 }
 
+/* Buttons */
 .tab-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -88,6 +90,15 @@ table.vendor-new {
   color: #0d47a1;
 }
 
+th.col-id,
+td.col-id {
+  width: 50px;
+  max-width: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Extra width for Клейковина column */
 th.col-x_studio_kley,
 td.col-x_studio_kley {
@@ -95,7 +106,7 @@ td.col-x_studio_kley {
   white-space: nowrap;
 }
 
-/* 🔁 Responsive for mobile */
+/* 🔁 Responsive behavior for mobile */
 @media (max-width: 768px) {
   .tab-buttons {
     flex-direction: column;
