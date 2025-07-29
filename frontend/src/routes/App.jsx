@@ -8,7 +8,6 @@ const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
   sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
   admin: { password: 'Adm!nPower9', tab: 'all' },
-  boss: { password: 'B0ssAccess4', tab: 'all' }, // ✅ Boss added
 };
 
 function App() {
@@ -23,8 +22,7 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
 
   const isAdmin = user === 'admin';
-  const isBoss = user === 'boss'; // ✅ Boss flag
-  const allowedTab = isAdmin || isBoss ? tab : USERS[user]?.tab;
+  const allowedTab = isAdmin ? tab : USERS[user]?.tab;
 
   useEffect(() => {
     if (!user) return;
@@ -49,7 +47,7 @@ function App() {
           if (USERS[username] && USERS[username].password === password) {
             localStorage.setItem('user', username);
             setUser(username);
-            setTab(USERS[username].tab === 'all' ? 'Хамза' : USERS[username].tab);
+            setTab(username === 'admin' ? 'Хамза' : USERS[username].tab);
           } else {
             alert("Invalid credentials");
           }
@@ -79,9 +77,8 @@ function App() {
   };
 
   const isVisible = (key, target) =>
-    key !== 'id' && key !== 'x_studio_supplier_order';
-
-  const isEditable = isAdmin && adminMode;
+    key !== 'id' && key !== 'x_studio_supplier_order' &&
+    (target === 'supplier' || target === 'vendor');
 
   const handleVendorChange = (supplierId, field, value) => {
     setNewVendors(prev => ({
@@ -187,7 +184,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {(isAdmin || isBoss) ? (
+        {isAdmin ? (
           <>
             <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
             <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
@@ -203,7 +200,145 @@ function App() {
         </>
       )}
 
-      {/* ...rest of render logic is unchanged, using isEditable instead of adminMode directly */}
+      {filtered.map((record, i) => {
+        const isEditing = !!editingSuppliers[record.id];
+        const hasMissingLab = (record.vendors || []).some(
+          v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
+        );
+        const isExpanded = expandedSuppliers.includes(record.id);
+
+        return (
+          <div key={i} className="supplier-card">
+            <table className="record-table vendor-new">
+              <thead>
+                <tr>
+                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
+                    <th key={f.key}>{f.label}</th>
+                  ))}
+                  {adminMode && <th>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+                    const value = isEditing ? editingSuppliers[record.id][f.key] : record[f.key];
+                    let style = {};
+                    if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
+                    if (f.key === 'x_studio_kley' && hasMissingLab) style.backgroundColor = '#fdd';
+                    return (
+                      <td key={f.key} className={`col-${f.key}`} style={style}>
+                        {isEditing ? (
+                          <input
+                            value={value || ''}
+                            onChange={e => setEditingSuppliers(p => ({
+                              ...p,
+                              [record.id]: {
+                                ...p[record.id],
+                                [f.key]: e.target.value
+                              }
+                            }))}
+                          />
+                        ) : value}
+                      </td>
+                    );
+                  })}
+                  {adminMode && (
+                    <td>
+                      {isEditing
+                        ? <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
+                        : <button onClick={() => startEditSupplier(record.id, record)}>✏️</button>}
+                      <button onClick={() => deleteSupplier(record.id)}>🗑️</button>
+                    </td>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+
+            {record.vendors?.length > 0 && (
+              <>
+                <button onClick={() => toggleExpand(record.id)}>{isExpanded ? '🔼' : '🔽'}</button>
+                {isExpanded && (
+                  <div className="vendor-table-wrapper">
+                    <table className="record-table vendor-new">
+                      <thead>
+                        <tr>
+                          {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
+                            <th key={f.key}>{f.label}</th>
+                          ))}
+                          {adminMode && <th>Actions</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {record.vendors.map((vendor, vIdx) => {
+                          const isEditingVendor = editingVendors[vendor.id];
+                          return (
+                            <tr key={vIdx}>
+                              {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => {
+                                const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
+                                let style = {};
+                                if (f.key === 'x_studio_lab_kley') {
+                                  style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
+                                }
+                                return (
+                                  <td key={f.key} style={style}>
+                                    {isEditingVendor ? (
+                                      <input
+                                        value={value || ''}
+                                        onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
+                                      />
+                                    ) : value}
+                                  </td>
+                                );
+                              })}
+                              {adminMode && (
+                                <td>
+                                  {isEditingVendor
+                                    ? <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
+                                    : <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>}
+                                  <button onClick={() => deleteVendor(record.id, vendor.id)}>🗑️</button>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {adminMode && (
+              <div className="vendor-add-form">
+                <strong>➕ Add New Vendor Order</strong>
+                <table className="record-table vendor-new">
+                  <tbody>
+                    <tr>
+                      {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
+                        <td key={f.key}>
+                          <input
+                            placeholder={f.label}
+                            value={newVendors[record.id]?.[f.key] || ''}
+                            onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
+                          />
+                        </td>
+                      ))}
+                      <td><button onClick={() => saveNewVendor(record.id)}>Save</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {adminMode && (
+        <>
+          <h2>Admin Field Editor</h2>
+          <FieldEditor fields={fields} setFields={setFields} />
+        </>
+      )}
     </div>
   );
 }
