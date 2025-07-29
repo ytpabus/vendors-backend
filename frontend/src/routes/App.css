@@ -116,6 +116,10 @@ td.col-id {
     display: block;
     box-sizing: border-box;
   }
+  
+  .supplier-card .record-table {
+  width: 100%;
+  }
 
   .record-table th,
   .record-table td,
@@ -126,7 +130,7 @@ td.col-id {
 
   .supplier-card {
     margin: 10px 5px;
-    padding: 10px;
+    padding: 5px;
   }
 
   input, button {
@@ -143,6 +147,6 @@ td.col-id {
   }
 
   .app-container {
-    padding: 0 10px; /* add safe padding */
+    padding: 0 5px; /* add safe padding */
   }
 }
