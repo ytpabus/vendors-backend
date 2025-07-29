@@ -109,18 +109,19 @@ td.col-id {
 
 @media (max-width: 768px) {
   .record-table,
-  .vendor-new {
-    display: block;
+  .vendor-new,
+  .vendor-table-wrapper {
+    width: 100%;
     overflow-x: auto;
-    white-space: nowrap;
-    font-size: 12px;
+    display: block;
+    box-sizing: border-box;
   }
 
   .record-table th,
   .record-table td,
   .vendor-new td {
-    font-size: 12px;
-    padding: 3px 6px;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .supplier-card {
@@ -129,15 +130,19 @@ td.col-id {
   }
 
   input, button {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .vendor-add-form input {
     width: 100%;
     box-sizing: border-box;
   }
-   .vendor-table-wrapper .record-table,
-  table.vendor-new {
-    width: 700px;
+
+  body {
+    overflow-x: hidden; /* prevent page scroll */
+  }
+
+  .app-container {
+    padding: 0 10px; /* add safe padding */
   }
 }
