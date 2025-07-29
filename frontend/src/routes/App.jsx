@@ -7,7 +7,6 @@ export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
   sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
-  boss: { password: 'Bo$$Access3', tab: 'all' },         // ✅ New User
   admin: { password: 'Adm!nPower9', tab: 'all' },
 };
 
@@ -23,14 +22,13 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
 
   const isAdmin = user === 'admin';
-  const isBoss = user === 'boss';                              // ✅
-  const allowedTab = (isAdmin || isBoss) ? tab : USERS[user]?.tab;
+  const allowedTab = isAdmin ? tab : USERS[user]?.tab;
 
   useEffect(() => {
     if (!user) return;
-    fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
-    fetch(`${BASE_URL}/fields-config`)
-      .then(res => res.ok ? res.json() : Promise.reject(`Failed with ${res.status}`))
+    fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
+    fetch(${BASE_URL}/fields-config)
+      .then(res => res.ok ? res.json() : Promise.reject(Failed with ${res.status}))
       .then(setFields)
       .catch(err => {
         console.error("❌ Field config fetch error:", err);
@@ -49,7 +47,7 @@ function App() {
           if (USERS[username] && USERS[username].password === password) {
             localStorage.setItem('user', username);
             setUser(username);
-            setTab(username === 'admin' || username === 'boss' ? 'Хамза' : USERS[username].tab);
+            setTab(username === 'admin' ? 'Хамза' : USERS[username].tab);
           } else {
             alert("Invalid credentials");
           }
@@ -96,13 +94,13 @@ function App() {
   const saveNewVendor = (supplierId) => {
     const vendor = newVendors[supplierId];
     if (!vendor?.id) return;
-    fetch(`${BASE_URL}/webhook/vendor`, {
+    fetch(${BASE_URL}/webhook/vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(vendor)
     }).then(() => {
       setNewVendors(p => ({ ...p, [supplierId]: {} }));
-      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
     });
   };
 
@@ -121,7 +119,7 @@ function App() {
   };
 
   const saveEditedVendor = (id) => {
-    fetch(`${BASE_URL}/webhook/vendor`, {
+    fetch(${BASE_URL}/webhook/vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingVendors[id])
@@ -131,7 +129,7 @@ function App() {
         delete updated[id];
         return updated;
       });
-      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
     });
   };
 
@@ -143,7 +141,7 @@ function App() {
   };
 
   const saveEditedSupplier = (id) => {
-    fetch(`${BASE_URL}/webhook/supplier`, {
+    fetch(${BASE_URL}/webhook/supplier, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingSuppliers[id])
@@ -153,20 +151,20 @@ function App() {
         delete updated[id];
         return updated;
       });
-      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
     });
   };
 
   const deleteSupplier = (id) => {
-    fetch(`${BASE_URL}/webhook/delete`, {
+    fetch(${BASE_URL}/webhook/delete, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
-    }).then(() => fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData));
+    }).then(() => fetch(${BASE_URL}/data).then(res => res.json()).then(setData));
   };
 
   const deleteVendor = (supplierId, vendorId) => {
-    fetch(`${BASE_URL}/webhook/delete-vendor`, {
+    fetch(${BASE_URL}/webhook/delete-vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: vendorId })
@@ -186,7 +184,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {(isAdmin || isBoss) ? (
+        {isAdmin ? (
           <>
             <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
             <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
@@ -228,7 +226,7 @@ function App() {
                     if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
                     if (f.key === 'x_studio_kley' && hasMissingLab) style.backgroundColor = '#fdd';
                     return (
-                      <td key={f.key} className={`col-${f.key}`} style={style}>
+                      <td key={f.key} className={col-${f.key}} style={style}>
                         {isEditing ? (
                           <input
                             value={value || ''}
