@@ -26,9 +26,9 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
-    fetch(${BASE_URL}/fields-config)
-      .then(res => res.ok ? res.json() : Promise.reject(Failed with ${res.status}))
+    fetch(`\${BASE_URL}/data`).then(res => res.json()).then(setData);
+    fetch(`\${BASE_URL}/fields-config`)
+      .then(res => res.ok ? res.json() : Promise.reject(`Failed with ${res.status}`))
       .then(setFields)
       .catch(err => {
         console.error("❌ Field config fetch error:", err);
@@ -94,13 +94,13 @@ function App() {
   const saveNewVendor = (supplierId) => {
     const vendor = newVendors[supplierId];
     if (!vendor?.id) return;
-    fetch(${BASE_URL}/webhook/vendor, {
+    fetch(`\${BASE_URL}/webhook/vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vendor)
+      body: JSON.stringify(vendor`)
     }).then(() => {
       setNewVendors(p => ({ ...p, [supplierId]: {} }));
-      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
+      fetch(`\${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
@@ -119,17 +119,17 @@ function App() {
   };
 
   const saveEditedVendor = (id) => {
-    fetch(${BASE_URL}/webhook/vendor, {
+    fetch(`\${BASE_URL}/webhook/vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingVendors[id])
+      body: JSON.stringify(editingVendors[id]`)
     }).then(() => {
       setEditingVendors(p => {
         const updated = { ...p };
         delete updated[id];
         return updated;
       });
-      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
+      fetch(`\${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
@@ -141,33 +141,33 @@ function App() {
   };
 
   const saveEditedSupplier = (id) => {
-    fetch(${BASE_URL}/webhook/supplier, {
+    fetch(`\${BASE_URL}/webhook/supplier, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingSuppliers[id])
+      body: JSON.stringify(editingSuppliers[id]`)
     }).then(() => {
       setEditingSuppliers(p => {
         const updated = { ...p };
         delete updated[id];
         return updated;
       });
-      fetch(${BASE_URL}/data).then(res => res.json()).then(setData);
+      fetch(`\${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
   const deleteSupplier = (id) => {
-    fetch(${BASE_URL}/webhook/delete, {
+    fetch(`\${BASE_URL}/webhook/delete, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    }).then(() => fetch(${BASE_URL}/data).then(res => res.json()).then(setData));
+      body: JSON.stringify({ id }`)
+    }).then(() => fetch(`\${BASE_URL}/data`).then(res => res.json()).then(setData));
   };
 
   const deleteVendor = (supplierId, vendorId) => {
-    fetch(${BASE_URL}/webhook/delete-vendor, {
+    fetch(`\${BASE_URL}/webhook/delete-vendor, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: vendorId })
+      body: JSON.stringify({ id: vendorId }`)
     }).then(() => {
       setData(p => {
         const updated = { ...p };
@@ -226,7 +226,7 @@ function App() {
                     if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
                     if (f.key === 'x_studio_kley' && hasMissingLab) style.backgroundColor = '#fdd';
                     return (
-                      <td key={f.key} className={col-${f.key}} style={style}>
+                      <td key={f.key} className={`col-${f.key}`} style={style}>
                         {isEditing ? (
                           <input
                             value={value || ''}
