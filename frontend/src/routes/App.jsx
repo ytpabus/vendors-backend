@@ -7,6 +7,7 @@ export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
   sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
+  boss: { password: 'Bo$$Access3', tab: 'both' },
   admin: { password: 'Adm!nPower9', tab: 'all' },
 };
 
@@ -22,7 +23,8 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
 
   const isAdmin = user === 'admin';
-  const allowedTab = isAdmin ? tab : USERS[user]?.tab;
+  const isBoss = user === 'boss';
+  const allowedTab = isAdmin || isBoss ? 'both' : USERS[user]?.tab;
 
   useEffect(() => {
     if (!user) return;
@@ -66,9 +68,14 @@ function App() {
     setTab('Хамза');
   };
 
-  const filtered = (data[tab] || []).filter(
-    r => allowedTab === 'all' || r.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1)
-  );
+  let filtered = [];
+
+if (allowedTab === 'all' || allowedTab === 'both') {
+  filtered = [...(data['Хамза'] || []), ...(data['Сергили'] || [])];
+} else {
+  filtered = data[tab] || [];
+}
+
 
   const toggleExpand = (id) => {
     setExpandedSuppliers(prev =>
@@ -184,21 +191,21 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {isAdmin ? (
-          <>
-            <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
-            <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
-          </>
-        ) : <h3>{allowedTab}</h3>}
+        {(isAdmin || isBoss) ? (
+  <>
+    <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
+    <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
+  </>
+) : <h3>{allowedTab}</h3>}
         <button onClick={logout} style={{ marginLeft: 'auto' }}>🚪 Logout</button>
       </div>
 
       {isAdmin && (
-        <>
-          <hr />
-          <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
-        </>
-      )}
+  <>
+    <hr />
+    <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
+  </>
+)}
 
       {filtered.map((record, i) => {
         const isEditing = !!editingSuppliers[record.id];
