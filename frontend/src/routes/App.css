@@ -1,10 +1,10 @@
+
 body {
   font-family: Arial, sans-serif;
   background: url('https://wallpapercave.com/wp/wp9729280.jpg') no-repeat center center fixed;
   background-size: cover;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
 }
 
 h1 {
@@ -28,19 +28,28 @@ h1 {
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-.supplier-card .record-table,
-.vendor-table-wrapper .record-table,
-table.vendor-new {
-  display: block;
-  overflow-x: auto;
-  width: 100%;
+.supplier-card .record-table {
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
   table-layout: fixed;
   border-collapse: collapse;
 }
 
-.vendor-table-wrapper {
-  overflow-x: auto;
-  margin-top: 10px;
+.vendor-table-wrapper .record-table {
+  font-size: 12px;
+  width: 95%;
+  margin-left: 10px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+table.vendor-new {
+  font-size: 12px;
+  width: 95%;
+  margin-left: 10px;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
 
 .record-table th,
@@ -66,13 +75,12 @@ table.vendor-new {
 
 .tab-buttons {
   display: flex;
-  flex-wrap: wrap;
   justify-content: flex-start;
   margin: 20px 10px;
 }
 
 .tab-buttons button {
-  margin: 5px 10px 5px 0;
+  margin-right: 10px;
   padding: 10px 18px;
   font-size: 16px;
   font-weight: bold;
@@ -88,22 +96,28 @@ table.vendor-new {
   color: #0d47a1;
 }
 
+th.col-id,
+td.col-id {
+  width: 50px;
+  max-width: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Allow more space for Клейковина (Gluten) column */
 th.col-x_studio_kley,
 td.col-x_studio_kley {
   min-width: 140px;
   white-space: nowrap;
 }
 
-/* 🔁 Responsive behavior for mobile */
 @media (max-width: 768px) {
-  body {
-    overflow-x: hidden;
-    overflow-y: scroll;
-  }
-
-  .tab-buttons {
-    flex-direction: column;
-    align-items: stretch;
+  .record-table,
+  .vendor-new {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 
   .record-table th,
