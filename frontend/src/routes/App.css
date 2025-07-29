@@ -4,23 +4,30 @@ body {
   background-size: cover;
   margin: 0;
   padding: 0;
-  color: #333;
 }
 
 h1 {
-  text-align: center;
-  margin-top: 20px;
+  text-align: left;
+  margin: 20px 0 0 10px;
   font-size: 28px;
 }
 
 .app-container {
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.9);
-  min-height: 100vh;
+  max-width: 1400px;
+  margin: auto;
+  padding-bottom: 40px;
+}
+
+.supplier-card {
+  background: #f1f5f9;
+  border: 1px solid #90caf9;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 20px auto;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-/* Scrollable and centered tables */
+/* Make tables scrollable on mobile */
 .supplier-card .record-table,
 .vendor-table-wrapper .record-table,
 table.vendor-new {
@@ -29,31 +36,34 @@ table.vendor-new {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: 12px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* Table content styling */
+.vendor-table-wrapper {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
 .record-table th,
 .record-table td,
 .vendor-new td {
+  font-size: 12px;
+  padding: 4px 6px;
   border: 1px solid #ccc;
-  padding: 6px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: transparent;
 }
 
-/* Width boost for Клейковина column */
-th.col-x_studio_kley,
-td.col-x_studio_kley {
-  min-width: 140px;
-  white-space: nowrap;
+.record-table th {
+  background: #eaeaea;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-/* Tab button styles */
 .tab-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -66,18 +76,26 @@ td.col-x_studio_kley {
   padding: 10px 18px;
   font-size: 16px;
   font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  background-color: #e2e6ea;
+  background-color: #ffffff;
+  border: 2px solid #90caf9;
+  border-radius: 8px;
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.tab-buttons .selected {
-  background-color: #007bff;
-  color: white;
+.tab-buttons button.selected {
+  background-color: #bbdefb;
+  border-color: #42a5f5;
+  color: #0d47a1;
 }
 
-/* Responsive tweaks for mobile */
+/* Extra width for Клейковина column */
+th.col-x_studio_kley,
+td.col-x_studio_kley {
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+/* 🔁 Responsive for mobile */
 @media (max-width: 768px) {
   .tab-buttons {
     flex-direction: column;
