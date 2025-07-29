@@ -22,20 +22,17 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
 
   const isAdmin = user === 'admin';
-  const allowedTab = user === 'admin' ? tab : USERS[user]?.tab;
+  const allowedTab = isAdmin ? tab : USERS[user]?.tab;
 
   useEffect(() => {
     if (!user) return;
     fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Failed to fetch fields: ${res.status}`);
-        return res.json();
-      })
+      .then(res => res.ok ? res.json() : Promise.reject(`Failed with ${res.status}`))
       .then(setFields)
       .catch(err => {
-        console.error("❌ Could not load fields config:", err);
-        alert("Unable to load field configuration. Check backend connection.");
+        console.error("❌ Field config fetch error:", err);
+        alert("Failed to load field config.");
       });
   }, [user]);
 
@@ -70,16 +67,18 @@ function App() {
   };
 
   const filtered = (data[tab] || []).filter(
-    record => allowedTab === 'all' || record.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1)
+    r => allowedTab === 'all' || r.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1)
   );
 
-  const toggleExpand = (supplierId) => {
+  const toggleExpand = (id) => {
     setExpandedSuppliers(prev =>
-      prev.includes(supplierId)
-        ? prev.filter(id => id !== supplierId)
-        : [...prev, supplierId]
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
+
+  const isVisible = (key, target) =>
+    key !== 'id' && key !== 'x_studio_supplier_order' &&
+    (target === 'supplier' || target === 'vendor');
 
   const handleVendorChange = (supplierId, field, value) => {
     setNewVendors(prev => ({
@@ -93,80 +92,75 @@ function App() {
   };
 
   const saveNewVendor = (supplierId) => {
-    const newVendor = newVendors[supplierId];
-    if (!newVendor || !newVendor.id) return;
+    const vendor = newVendors[supplierId];
+    if (!vendor?.id) return;
     fetch(`${BASE_URL}/webhook/vendor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newVendor)
+      body: JSON.stringify(vendor)
     }).then(() => {
-      setNewVendors(prev => ({ ...prev, [supplierId]: {} }));
+      setNewVendors(p => ({ ...p, [supplierId]: {} }));
       fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
-  const startEditVendor = (vendorId, supplierId, vendorData) => {
-    setEditingVendors(prev => ({
-      ...prev,
-      [vendorId]: { ...vendorData, x_studio_supplier_order: supplierId }
+  const handleEditVendorChange = (id, field, value) => {
+    setEditingVendors(p => ({
+      ...p,
+      [id]: { ...p[id], [field]: value }
     }));
   };
 
-  const saveEditedVendor = (vendorId) => {
+  const startEditVendor = (id, supplierId, data) => {
+    setEditingVendors(p => ({
+      ...p,
+      [id]: { ...data, x_studio_supplier_order: supplierId }
+    }));
+  };
+
+  const saveEditedVendor = (id) => {
     fetch(`${BASE_URL}/webhook/vendor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingVendors[vendorId])
+      body: JSON.stringify(editingVendors[id])
     }).then(() => {
-      setEditingVendors(prev => {
-        const updated = { ...prev };
-        delete updated[vendorId];
+      setEditingVendors(p => {
+        const updated = { ...p };
+        delete updated[id];
         return updated;
       });
       fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
-  const handleEditVendorChange = (vendorId, field, value) => {
-    setEditingVendors(prev => ({
-      ...prev,
-      [vendorId]: {
-        ...prev[vendorId],
-        [field]: value
-      }
+  const startEditSupplier = (id, record) => {
+    setEditingSuppliers(p => ({
+      ...p,
+      [id]: { ...record }
     }));
   };
 
-  const startEditSupplier = (supplierId, record) => {
-    setEditingSuppliers(prev => ({
-      ...prev,
-      [supplierId]: { ...record }
-    }));
-  };
-
-  const saveEditedSupplier = (supplierId) => {
+  const saveEditedSupplier = (id) => {
     fetch(`${BASE_URL}/webhook/supplier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingSuppliers[supplierId])
+      body: JSON.stringify(editingSuppliers[id])
     }).then(() => {
-      setEditingSuppliers(prev => {
-        const updated = { ...prev };
-        delete updated[supplierId];
+      setEditingSuppliers(p => {
+        const updated = { ...p };
+        delete updated[id];
         return updated;
       });
       fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     });
   };
 
-  const deleteSupplier = (supplierId) => {
+  const deleteSupplier = (id) => {
     fetch(`${BASE_URL}/webhook/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: supplierId })
-    }).then(() => {
-      fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
-    });
+      body: JSON.stringify({ id })
+    }).then(() => fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData));
   };
 
   const deleteVendor = (supplierId, vendorId) => {
@@ -175,15 +169,12 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: vendorId })
     }).then(() => {
-      setData(prev => {
-        const updated = { ...prev };
-        updated[tab] = updated[tab].map(supplier =>
-          supplier.id === supplierId
-            ? {
-                ...supplier,
-                vendors: supplier.vendors.filter(v => v.id !== vendorId)
-              }
-            : supplier
+      setData(p => {
+        const updated = { ...p };
+        updated[tab] = updated[tab].map(s =>
+          s.id === supplierId
+            ? { ...s, vendors: s.vendors.filter(v => v.id !== vendorId) }
+            : s
         );
         return updated;
       });
@@ -193,62 +184,57 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {user === 'admin' && (
+        {isAdmin ? (
           <>
             <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
             <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
           </>
-        )}
-        {user !== 'admin' && <h3>{allowedTab}</h3>}
+        ) : <h3>{allowedTab}</h3>}
         <button onClick={logout} style={{ marginLeft: 'auto' }}>🚪 Logout</button>
       </div>
 
       {isAdmin && (
-  <>
-    <hr />
-    <button onClick={() => setAdminMode(!adminMode)}>
-      🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}
-    </button>
-  </>
-)}
+        <>
+          <hr />
+          <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
+        </>
+      )}
 
-      {filtered.map((record, index) => {
-        const hasMissingLabKley = (record.vendors || []).some(
+      {filtered.map((record, i) => {
+        const isEditing = !!editingSuppliers[record.id];
+        const hasMissingLab = (record.vendors || []).some(
           v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
         );
         const isExpanded = expandedSuppliers.includes(record.id);
-        const isEditing = !!editingSuppliers[record.id];
 
         return (
-          <div key={index} className={`supplier-card ${isExpanded ? 'expanded' : ''}`}>
+          <div key={i} className="supplier-card">
             <table className="record-table vendor-new">
               <thead>
                 <tr>
-                  {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => (
-                    <th key={field.key}>{field.label}</th>
+                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
+                    <th key={f.key}>{f.label}</th>
                   ))}
                   {adminMode && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  {fields.filter(f => f.target === 'supplier').sort((a, b) => a.position - b.position).map(field => {
-                    const value = isEditing ? editingSuppliers[record.id][field.key] : record[field.key];
+                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+                    const value = isEditing ? editingSuppliers[record.id][f.key] : record[f.key];
                     let style = {};
-
-                    if (field.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
-                    if (field.key === 'x_studio_kley' && hasMissingLabKley) style.backgroundColor = '#fdd';
-
+                    if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
+                    if (f.key === 'x_studio_kley' && hasMissingLab) style.backgroundColor = '#fdd';
                     return (
-                      <td key={field.key} className={`col-${field.key}`} style={style}>
+                      <td key={f.key} className={`col-${f.key}`} style={style}>
                         {isEditing ? (
                           <input
                             value={value || ''}
-                            onChange={(e) => setEditingSuppliers(prev => ({
-                              ...prev,
+                            onChange={e => setEditingSuppliers(p => ({
+                              ...p,
                               [record.id]: {
-                                ...prev[record.id],
-                                [field.key]: e.target.value
+                                ...p[record.id],
+                                [f.key]: e.target.value
                               }
                             }))}
                           />
@@ -258,11 +244,9 @@ function App() {
                   })}
                   {adminMode && (
                     <td>
-                      {isEditing ? (
-                        <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
-                      ) : (
-                        <button onClick={() => startEditSupplier(record.id, record)}>✏️</button>
-                      )}
+                      {isEditing
+                        ? <button onClick={() => saveEditedSupplier(record.id)}>💾</button>
+                        : <button onClick={() => startEditSupplier(record.id, record)}>✏️</button>}
                       <button onClick={() => deleteSupplier(record.id)}>🗑️</button>
                     </td>
                   )}
@@ -270,7 +254,7 @@ function App() {
               </tbody>
             </table>
 
-            {record.vendors && record.vendors.length > 0 && (
+            {record.vendors?.length > 0 && (
               <>
                 <button onClick={() => toggleExpand(record.id)}>{isExpanded ? '🔼' : '🔽'}</button>
                 {isExpanded && (
@@ -278,8 +262,8 @@ function App() {
                     <table className="record-table vendor-new">
                       <thead>
                         <tr>
-                          {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
-                            <th key={field.key}>{field.label}</th>
+                          {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
+                            <th key={f.key}>{f.label}</th>
                           ))}
                           {adminMode && <th>Actions</th>}
                         </tr>
@@ -289,18 +273,18 @@ function App() {
                           const isEditingVendor = editingVendors[vendor.id];
                           return (
                             <tr key={vIdx}>
-                              {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => {
-                                const value = isEditingVendor ? editingVendors[vendor.id][field.key] : vendor[field.key];
+                              {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => {
+                                const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
                                 let style = {};
-                                if (field.key === 'x_studio_lab_kley') {
+                                if (f.key === 'x_studio_lab_kley') {
                                   style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
                                 }
                                 return (
-                                  <td key={field.key} style={style}>
+                                  <td key={f.key} style={style}>
                                     {isEditingVendor ? (
                                       <input
                                         value={value || ''}
-                                        onChange={(e) => handleEditVendorChange(vendor.id, field.key, e.target.value)}
+                                        onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
                                       />
                                     ) : value}
                                   </td>
@@ -308,11 +292,9 @@ function App() {
                               })}
                               {adminMode && (
                                 <td>
-                                  {isEditingVendor ? (
-                                    <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
-                                  ) : (
-                                    <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>
-                                  )}
+                                  {isEditingVendor
+                                    ? <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
+                                    : <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>}
                                   <button onClick={() => deleteVendor(record.id, vendor.id)}>🗑️</button>
                                 </td>
                               )}
@@ -332,12 +314,12 @@ function App() {
                 <table className="record-table vendor-new">
                   <tbody>
                     <tr>
-                      {fields.filter(f => f.target === 'vendor' && f.key !== 'x_studio_supplier_order').sort((a, b) => a.position - b.position).map(field => (
-                        <td key={field.key}>
+                      {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
+                        <td key={f.key}>
                           <input
-                            placeholder={field.label}
-                            value={(newVendors[record.id]?.[field.key]) || ''}
-                            onChange={(e) => handleVendorChange(record.id, field.key, e.target.value)}
+                            placeholder={f.label}
+                            value={newVendors[record.id]?.[f.key] || ''}
+                            onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
                           />
                         </td>
                       ))}
