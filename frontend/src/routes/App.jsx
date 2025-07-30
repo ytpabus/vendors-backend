@@ -8,6 +8,7 @@ const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
   sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
   admin: { password: 'Adm!nPower9', tab: 'all' },
+  boss: { password: 'Bo$$Access3', tab: 'all' },
 };
 
 function App() {
@@ -22,7 +23,8 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
 
   const isAdmin = user === 'admin';
-  const allowedTab = isAdmin ? tab : USERS[user]?.tab;
+  const isBoss = user === 'boss';
+  const allowedTab = (isAdmin || isBoss) ? tab : USERS[user]?.tab;
 
   useEffect(() => {
     if (!user) return;
@@ -47,7 +49,7 @@ function App() {
           if (USERS[username] && USERS[username].password === password) {
             localStorage.setItem('user', username);
             setUser(username);
-            setTab(username === 'admin' ? 'Хамза' : USERS[username].tab);
+            setTab(username === 'admin' || username === 'boss' ? 'Хамза' : USERS[username].tab);
           } else {
             alert("Invalid credentials");
           }
@@ -184,7 +186,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="tab-buttons">
-        {isAdmin ? (
+        {(isAdmin || isBoss) ? (
           <>
             <button className={tab === 'Хамза' ? 'selected' : ''} onClick={() => setTab('Хамза')}>Хамза</button>
             <button className={tab === 'Сергили' ? 'selected' : ''} onClick={() => setTab('Сергили')}>Сергили</button>
