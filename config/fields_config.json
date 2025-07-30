@@ -13,7 +13,7 @@
   { "label": "ID", "key": "id", "type": "number", "target": "vendor", "position": 1 },
   { "label": "Фирма", "key": "x_studio_name_firm", "type": "text", "target": "vendor", "position": 2 },
   { "label": "Контракт №", "key": "x_studio_contract_id", "type": "text", "target": "vendor", "position": 3 },
-  { "label": "Станция наз.", "key": "x_studio_name_station_to", "type": "text", "target": "vendor", "position": 5 },
+  { "label": "Станция отпр.", "key": "x_studio_name_station_from", "type": "text", "target": "vendor", "position": 4 },
   { "label": "Отправлено ", "key": "x_studio_gtd", "type": "number", "target": "vendor", "position": 7 },
   { "label": "Лабаратория", "key": "x_studio_lab_kley", "type": "number", "target": "vendor", "position": 9 },
   { "label": "Дата Отгрузки", "key": "x_studio_date", "type": "date", "target": "vendor", "position": 11 },
