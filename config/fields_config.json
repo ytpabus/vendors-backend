@@ -1,6 +1,6 @@
 [
   { "label": "ID", "key": "id", "type": "number", "target": "supplier", "position": 1 },
-  { "label": "Поставщик", "key": "x_studio_supplier_name", "type": "text", "target": "supplier", "position": 2}
+  { "label": "Поставщик", "key": "x_studio_supplier_name", "type": "text", "target": "supplier", "position": 2},
   { "label": "Станция наз.", "key": "x_studio_name_station_to", "type": "text", "target": "supplier", "position": 3 },
   { "label": "Клейковина", "key": "x_studio_kley", "type": "number", "target": "supplier", "position": 4 },
   { "label": "Тоннаж", "key": "x_studio_tons", "type": "number", "target": "supplier", "position": 5 },
