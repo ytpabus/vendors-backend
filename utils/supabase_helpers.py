@@ -59,5 +59,14 @@ def delete_supplier(supplier_id):
     supabase.table("suppliers").delete().eq("id", supplier_id).execute()
     
 def delete_vendor(vendor_id):
+    vendor_data = supabase.table("vendors").select("*").eq("id", vendor_id).execute().data
+    if not vendor_data:
+        return []
+
+    file_url = vendor_data[0]["data"].get("file", "")
+    if "vendor-files/" in file_url:
+        filename = file_url.split("vendor-files/")[-1]
+        supabase.storage.from_("vendor-files").remove([filename])
+
     res = supabase.table("vendors").delete().eq("id", vendor_id).execute()
     return res.data

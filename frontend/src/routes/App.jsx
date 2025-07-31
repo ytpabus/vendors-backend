@@ -321,12 +321,50 @@ function App() {
                     <tr>
                       {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
                         <td key={f.key}>
-                          <input
-                            placeholder={f.label}
-                            value={newVendors[record.id]?.[f.key] || ''}
-                            onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
-                          />
-                        </td>
+  {f.type === 'file' ? (
+    <div>
+      <input
+        type="file"
+        onChange={async e => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const form = new FormData();
+          form.append("file", file);
+          form.append("vendor_id", record.id);
+
+          const res = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            body: form,
+          });
+          const data = await res.json();
+
+          if (data.url) {
+            handleVendorChange(record.id, f.key, data.url);
+          } else {
+            alert("Upload failed");
+          }
+        }}
+      />
+      {newVendors[record.id]?.[f.key] && (
+        <a
+          href={newVendors[record.id][f.key]}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: "block", marginTop: "5px" }}
+        >
+          📄 Download File
+        </a>
+      )}
+    </div>
+  ) : (
+    <input
+      placeholder={f.label}
+      value={newVendors[record.id]?.[f.key] || ''}
+      onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
+    />
+  )}
+</td>
                       ))}
                       <td><button onClick={() => saveNewVendor(record.id)}>Save</button></td>
                     </tr>

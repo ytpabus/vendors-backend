@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor
+from utils.supabase_client import supabase
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
+import uuid
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -34,6 +36,27 @@ def delete_webhook():
         delete_supplier(supplier_id)
     return "OK"
 
+@app.route("//upload", methods=["POST"])
+def upload_file():
+    if 'file' not in request.files or 'vendor_id' not in request.form:
+        return jsonify({"error": "Missing file or vendor_id"}), 400
+    
+    file = request.files['file']
+    vendor_id = request.form['vendor_id']
+    ext = file.filename.rsplit('.', 1)[-1].lower()
+    unique_name = f"{vendor_id}_{uuid.uuid4().hex}.{ext}"
+
+    res = supabase.storage.from_("vendor-files").upload(
+        unique_name, file, {"content-type": file.mimetype}
+    )
+
+    if res.get("error"):
+        return jsonify({"error": res["error"]["message"]}), 500
+    
+    public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/vendor-files/{unique_name}"
+    return jsonify({"url": public_url})
+                                
+    
 
 # ✅ Webhook: Delete Vendor
 @app.route('/webhook/delete-vendor', methods=['POST'])
