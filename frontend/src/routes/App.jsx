@@ -286,13 +286,54 @@ function App() {
                                 }
                                 return (
                                   <td key={f.key} style={style}>
-                                    {isEditingVendor ? (
-                                      <input
-                                        value={value || ''}
-                                        onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
-                                      />
-                                    ) : value}
-                                  </td>
+  {f.type === 'file' ? (
+    <div>
+      {isEditingVendor ? (
+        <input
+          type="file"
+          onChange={async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const form = new FormData();
+            form.append("file", file);
+            form.append("vendor_id", vendor.id);
+
+            const res = await fetch(`${BASE_URL}/upload`, {
+              method: "POST",
+              body: form,
+            });
+            const data = await res.json();
+
+            if (data.url) {
+              handleEditVendorChange(vendor.id, f.key, data.url);
+            } else {
+              alert("Upload failed");
+            }
+          }}
+        />
+      ) : (
+        vendor[f.key] && (
+          <a
+            href={vendor[f.key]}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "block", marginTop: "5px" }}
+          >
+            📄 Download File
+          </a>
+        )
+      )}
+    </div>
+  ) : (
+    isEditingVendor ? (
+      <input
+        value={value || ''}
+        onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
+      />
+    ) : value
+  )}
+</td>
                                 );
                               })}
                               {adminMode && (
