@@ -28,6 +28,9 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
+    if (!(user === 'admin' || user === 'boss')) {
+      setTab(USERS[user].tab);
+    }
     fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
     fetch(`${BASE_URL}/fields-config`)
       .then(res => res.ok ? res.json() : Promise.reject(`Failed with ${res.status}`))
