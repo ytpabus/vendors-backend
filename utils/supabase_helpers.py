@@ -70,13 +70,21 @@ def upload_file_to_supabase(vendor_id, file_storage):
     path = f"{vendor_id}/{filename}"
     content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
-    supabase.storage.from_(BUCKET).upload(path, file_storage, {"content-type": content_type})
+    # Read file content
+    file_bytes = file_storage.read()
+
+    # Upload to Supabase
+    res = supabase.storage.from_(BUCKET).upload(path, file_bytes, {"content-type": content_type, "cacheControl": "3600", "upsert": True})
+    if not res:
+        raise Exception("Upload failed")
+
     public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/{BUCKET}/{path}"
 
-    # Append to vendor's file list
+    # Update vendor record
     vendor = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
     current_files = vendor["data"].get("file", [])
-    current_files.append(public_url)
+    if public_url not in current_files:
+        current_files.append(public_url)
 
     supabase.table("vendors").update({
         "data": {**vendor["data"], "file": current_files}
