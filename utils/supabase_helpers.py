@@ -1,7 +1,10 @@
 from supabase import create_client, Client
+import mimetypes
+from supabase_client import supabase
 
 SUPABASE_URL = "https://qwtcqnaqhfsjwdnlqyds.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dGNxbmFxaGZzandkbmxxeWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTAzNTIsImV4cCI6MjA2ODc2NjM1Mn0.yXF1vpaZmUcZWToOw-GccrNYCWuHh2Wa-zieeuk6kUY"
+BUCKET = "vendor-files"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -59,14 +62,40 @@ def delete_supplier(supplier_id):
     supabase.table("suppliers").delete().eq("id", supplier_id).execute()
     
 def delete_vendor(vendor_id):
-    vendor_data = supabase.table("vendors").select("*").eq("id", vendor_id).execute().data
-    if not vendor_data:
-        return []
-
-    file_url = vendor_data[0]["data"].get("file", "")
-    if "vendor-files/" in file_url:
-        filename = file_url.split("vendor-files/")[-1]
-        supabase.storage.from_("vendor-files").remove([filename])
-
     res = supabase.table("vendors").delete().eq("id", vendor_id).execute()
     return res.data
+
+def upload_file_to_supabase(vendor_id, file_storage):
+    filename = file_storage.filename
+    path = f"{vendor_id}/{filename}"
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
+    supabase.storage.from_(BUCKET).upload(path, file_storage, {"content-type": content_type})
+    public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/{BUCKET}/{path}"
+
+    # Append to vendor's file list
+    vendor = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
+    current_files = vendor["data"].get("file", [])
+    current_files.append(public_url)
+
+    supabase.table("vendors").update({
+        "data": {**vendor["data"], "file": current_files}
+    }).eq("id", vendor_id).execute()
+
+    return public_url
+
+
+def delete_file_from_supabase(vendor_id, file_url):
+    filename = file_url.split("/")[-1]
+    path = f"{vendor_id}/{filename}"
+    supabase.storage.from_(BUCKET).remove([path])
+
+    # Remove from vendor file list
+    vendor = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
+    current_files = vendor["data"].get("file", [])
+    updated_files = [f for f in current_files if f != file_url]
+
+    supabase.table("vendors").update({
+        "data": {**vendor["data"], "file": updated_files}
+    }).eq("id", vendor_id).execute()
+

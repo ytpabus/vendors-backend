@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify
-from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor
-from utils.supabase_client import supabase
+from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
-import uuid
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -36,27 +34,33 @@ def delete_webhook():
         delete_supplier(supplier_id)
     return "OK"
 
-@app.route("//upload", methods=["POST"])
+@app.route("/upload", methods=["POST"])
 def upload_file():
-    if 'file' not in request.files or 'vendor_id' not in request.form:
-        return jsonify({"error": "Missing file or vendor_id"}), 400
-    
-    file = request.files['file']
-    vendor_id = request.form['vendor_id']
-    ext = file.filename.rsplit('.', 1)[-1].lower()
-    unique_name = f"{vendor_id}_{uuid.uuid4().hex}.{ext}"
+    vendor_id = request.form.get("vendor_id")
+    file = request.files.get("file")
+    if not vendor_id or not file:
+        return jsonify({"error": "Missing vendor_id or file"}), 400
 
-    res = supabase.storage.from_("vendor-files").upload(
-        unique_name, file, {"content-type": file.mimetype}
-    )
+    try:
+        url = upload_file_to_supabase(vendor_id, file)
+        return jsonify({"url": url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    if res.get("error"):
-        return jsonify({"error": res["error"]["message"]}), 500
-    
-    public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/vendor-files/{unique_name}"
-    return jsonify({"url": public_url})
-                                
-    
+@app.route("/delete-file", methods=["POST"])
+def delete_file():
+    data = request.get_json()
+    vendor_id = data.get("vendor_id")
+    file_url = data.get("file_url")
+    if not vendor_id or not file_url:
+        return jsonify({"error": "Missing vendor_id or file_url"}), 400
+
+    try:
+        delete_file_from_supabase(vendor_id, file_url)
+        return jsonify({"status": "deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # ✅ Webhook: Delete Vendor
 @app.route('/webhook/delete-vendor', methods=['POST'])

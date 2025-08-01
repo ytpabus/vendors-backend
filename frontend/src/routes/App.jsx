@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import FieldEditor from '../components/FieldEditor';
 import './App.css';
+import FileModal from '../components/FileModal';
+
 
 export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
@@ -21,6 +23,9 @@ function App() {
   const [editingVendors, setEditingVendors] = useState({});
   const [editingSuppliers, setEditingSuppliers] = useState({});
   const [user, setUser] = useState(localStorage.getItem('user') || null);
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [activeVendorId, setActiveVendorId] = useState(null);
+  const [fileModalFiles, setFileModalFiles] = useState([])
 
   const isAdmin = user === 'admin';
   const isBoss = user === 'boss';
@@ -185,6 +190,43 @@ function App() {
       });
     });
   };
+  
+  const handleFileUpload = async (file) => {
+  const formData = new FormData();
+  formData.append("vendor_id", activeVendorId);
+  formData.append("file", file);
+
+  const res = await fetch(`${BASE_URL}/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  const dataRes = await fetch(`${BASE_URL}/data`);
+  const dataJson = await dataRes.json();
+  setData(dataJson);
+  setFileModalFiles(dataJson[tab]
+    .flatMap(s => s.vendors || [])
+    .find(v => v.id === activeVendorId)?.file || []);
+};
+
+const handleFileDelete = async (fileUrl) => {
+  await fetch(`${BASE_URL}/delete-file`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      vendor_id: activeVendorId,
+      file_url: fileUrl
+    })
+  });
+
+  const dataRes = await fetch(`${BASE_URL}/data`);
+  const dataJson = await dataRes.json();
+  setData(dataJson);
+  setFileModalFiles(dataJson[tab]
+    .flatMap(s => s.vendors || [])
+    .find(v => v.id === activeVendorId)?.file || []);
+};
+
 
   return (
     <div className="app-container">
@@ -221,6 +263,7 @@ function App() {
                     <th key={f.key}>{f.label}</th>
                   ))}
                   {adminMode && <th>Actions</th>}
+                  <th>📁</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,85 +309,58 @@ function App() {
                   <div className="vendor-table-wrapper">
                     <table className="record-table vendor-new">
                       <thead>
-                        <tr>
-                          {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
-                            <th key={f.key}>{f.label}</th>
-                          ))}
-                          {adminMode && <th>Actions</th>}
-                        </tr>
-                      </thead>
+  <tr>
+    {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
+      <th key={f.key}>{f.label}</th>
+    ))}
+    {adminMode && <th>Actions</th>}
+    <th>📁</th> {/* ✅ Add this */}
+  </tr>
+</thead>
                       <tbody>
                         {record.vendors.map((vendor, vIdx) => {
                           const isEditingVendor = editingVendors[vendor.id];
                           return (
                             <tr key={vIdx}>
-                              {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => {
-                                const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
-                                let style = {};
-                                if (f.key === 'x_studio_lab_kley') {
-                                  style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
-                                }
-                                return (
-                                  <td key={f.key} style={style}>
-  {f.type === 'file' ? (
-    <div>
-      {isEditingVendor ? (
-        <input
-          type="file"
-          onChange={async e => {
-            const file = e.target.files[0];
-            if (!file) return;
+  {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => {
+    const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
+    let style = {};
+    if (f.key === 'x_studio_lab_kley') {
+      style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
+    }
+    return (
+      <td key={f.key} style={style}>
+        {isEditingVendor ? (
+          <input
+            value={value || ''}
+            onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
+          />
+        ) : value}
+      </td>
+    );
+  })}
 
-            const form = new FormData();
-            form.append("file", file);
-            form.append("vendor_id", vendor.id);
-
-            const res = await fetch(`${BASE_URL}/upload`, {
-              method: "POST",
-              body: form,
-            });
-            const data = await res.json();
-
-            if (data.url) {
-              handleEditVendorChange(vendor.id, f.key, data.url);
-            } else {
-              alert("Upload failed");
-            }
-          }}
-        />
-      ) : (
-        vendor[f.key] && (
-          <a
-            href={vendor[f.key]}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: "block", marginTop: "5px" }}
-          >
-            📄 Download File
-          </a>
-        )
-      )}
-    </div>
-  ) : (
-    isEditingVendor ? (
-      <input
-        value={value || ''}
-        onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
-      />
-    ) : value
+  {/* Admin buttons */}
+  {adminMode && (
+    <td>
+      {isEditingVendor
+        ? <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
+        : <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>}
+      <button onClick={() => deleteVendor(record.id, vendor.id)}>🗑️</button>
+    </td>
   )}
-</td>
-                                );
-                              })}
-                              {adminMode && (
-                                <td>
-                                  {isEditingVendor
-                                    ? <button onClick={() => saveEditedVendor(vendor.id)}>💾</button>
-                                    : <button onClick={() => startEditVendor(vendor.id, record.id, vendor)}>✏️</button>}
-                                  <button onClick={() => deleteVendor(record.id, vendor.id)}>🗑️</button>
-                                </td>
-                              )}
-                            </tr>
+
+  {/* 📎 Files column (always visible) */}
+  <td>
+    <button onClick={() => {
+      setActiveVendorId(vendor.id);
+      setFileModalFiles(vendor.file || []);
+      setFileModalOpen(true);
+    }}>
+      📎 Files
+    </button>
+  </td>
+</tr>
                           );
                         })}
                       </tbody>
@@ -362,50 +378,12 @@ function App() {
                     <tr>
                       {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => (
                         <td key={f.key}>
-  {f.type === 'file' ? (
-    <div>
-      <input
-        type="file"
-        onChange={async e => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const form = new FormData();
-          form.append("file", file);
-          form.append("vendor_id", record.id);
-
-          const res = await fetch(`${BASE_URL}/upload`, {
-            method: "POST",
-            body: form,
-          });
-          const data = await res.json();
-
-          if (data.url) {
-            handleVendorChange(record.id, f.key, data.url);
-          } else {
-            alert("Upload failed");
-          }
-        }}
-      />
-      {newVendors[record.id]?.[f.key] && (
-        <a
-          href={newVendors[record.id][f.key]}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "block", marginTop: "5px" }}
-        >
-          📄 Download File
-        </a>
-      )}
-    </div>
-  ) : (
-    <input
-      placeholder={f.label}
-      value={newVendors[record.id]?.[f.key] || ''}
-      onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
-    />
-  )}
-</td>
+                          <input
+                            placeholder={f.label}
+                            value={newVendors[record.id]?.[f.key] || ''}
+                            onChange={e => handleVendorChange(record.id, f.key, e.target.value)}
+                          />
+                        </td>
                       ))}
                       <td><button onClick={() => saveNewVendor(record.id)}>Save</button></td>
                     </tr>
