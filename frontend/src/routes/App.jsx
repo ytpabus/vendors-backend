@@ -257,15 +257,7 @@ const handleFileDelete = async (fileUrl) => {
         return (
           <div key={i} className="supplier-card">
             <table className="record-table vendor-new">
-              <thead>
-                <tr>
-                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
-                    <th key={f.key}>{f.label}</th>
-                  ))}
-                  {adminMode && <th>Actions</th>}
-                  <th>📁</th>
-                </tr>
-              </thead>
+              
               <tbody>
                 <tr>
                   {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
@@ -401,6 +393,15 @@ const handleFileDelete = async (fileUrl) => {
           <FieldEditor fields={fields} setFields={setFields} />
         </>
       )}
+      <FileModal
+  vendorId={activeVendorId}
+  files={fileModalFiles}
+  isOpen={fileModalOpen}
+  onClose={() => setFileModalOpen(false)}
+  onUpload={handleFileUpload}
+  onDelete={handleFileDelete}
+  isAdmin={isAdmin}
+/>
     </div>
   );
 }
