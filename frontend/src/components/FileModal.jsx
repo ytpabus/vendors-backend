@@ -6,7 +6,7 @@ const FileModal = ({ vendorId, files, isOpen, onClose, onUpload, onDelete, isAdm
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center">
       <div className="bg-white p-4 rounded-xl w-full max-w-xl max-h-[80vh] overflow-y-auto relative shadow-lg">
         <button
           onClick={onClose}
@@ -24,6 +24,7 @@ const FileModal = ({ vendorId, files, isOpen, onClose, onUpload, onDelete, isAdm
               const file = e.target.files[0];
               if (file) {
                 await onUpload(file);
+                setSelectedFile(null);
               }
             }}
             className="border p-1 w-full"

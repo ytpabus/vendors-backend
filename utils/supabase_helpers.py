@@ -66,21 +66,29 @@ def delete_vendor(vendor_id):
     return res.data
 
 def upload_file_to_supabase(vendor_id, file_storage):
+    from io import BytesIO
+    import mimetypes
+
     filename = file_storage.filename
     path = f"{vendor_id}/{filename}"
     content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    file_bytes = BytesIO(file_storage.read())  # ← KEY FIX
 
-    # Read file content
-    file_bytes = file_storage.read()
+    res = supabase.storage.from_("vendor-files").upload(
+        path,
+        file_bytes,
+        {
+            "content-type": content_type,
+            "upsert": True,
+            "cacheControl": "3600",
+        }
+    )
 
-    # Upload to Supabase
-    res = supabase.storage.from_(BUCKET).upload(path, file_bytes, {"content-type": content_type, "cacheControl": "3600", "upsert": True})
-    if not res:
-        raise Exception("Upload failed")
+    if res.get("error"):
+        raise Exception(f"Upload failed: {res['error']['message']}")
 
-    public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/{BUCKET}/{path}"
+    public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/vendor-files/{path}"
 
-    # Update vendor record
     vendor = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
     current_files = vendor["data"].get("file", [])
     if public_url not in current_files:
