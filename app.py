@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
-from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase
+from flask import Flask, request, jsonify, send_file
+from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase, get_all_files_for_vendor
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
 from flask_cors import CORS
+import requests
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -34,10 +36,28 @@ def delete_webhook():
         delete_supplier(supplier_id)
     return "OK"
 
+@app.route("/vendor-files", methods=["GET"])
+def get_vendor_files():
+    vendor_id = request.args.get("vendor_id")
+    if not vendor_id:
+        return jsonify({"error": "vendor_id required"}), 400
+    files = get_all_files_for_vendor(vendor_id)
+    return jsonify({"files": files})
+
 @app.route("/upload", methods=["POST"])
 def upload_file():
     vendor_id = request.form.get("vendor_id")
     file = request.files.get("file")
+
+    print(">>> Received vendor_id:", vendor_id)
+    print(">>> Received file:", file)
+    if file:
+        print(">>> File name:", file.filename)
+        print(">>> File content length:", len(file.read()))
+        file.seek(0)  # Reset after read
+    else:
+        print(">>> No file received")
+
     if not vendor_id or not file:
         return jsonify({"error": "Missing vendor_id or file"}), 400
 
@@ -45,7 +65,26 @@ def upload_file():
         url = upload_file_to_supabase(vendor_id, file)
         return jsonify({"url": url}), 200
     except Exception as e:
+        print(">>> Upload error:", str(e))  # 👈 this is key
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/download')
+def download_file():
+    file_url = request.args.get('url')
+    filename = file_url.split("/")[-1]
+
+    # Download file content from Supabase
+    response = requests.get(file_url)
+    if response.status_code != 200:
+        return "Failed to download file", 500
+
+    # Serve with download headers
+    return send_file(
+        BytesIO(response.content),
+        as_attachment=True,
+        download_name=filename,
+        mimetype=response.headers.get("Content-Type", "application/octet-stream")
+    )
 
 @app.route("/delete-file", methods=["POST"])
 def delete_file():

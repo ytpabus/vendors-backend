@@ -1,93 +1,75 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
+import "../routes/App.css"; 
+import { BASE_URL } from '../routes/App';
 
 const FileModal = ({ vendorId, files, isOpen, onClose, onUpload, onDelete, isAdmin }) => {
   const [selectedFile, setSelectedFile] = useState(null);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center">
-      <div className="bg-white p-4 rounded-xl w-full max-w-xl max-h-[80vh] overflow-y-auto relative shadow-lg">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
-        >
-          ✖
-        </button>
+  return ReactDOM.createPortal(
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <button className="modal-close" onClick={() => {
+          setSelectedFile(null);
+           onClose();
+        }}>✖</button>
+        <h2>📂 Files for Vendor #{vendorId}</h2>
 
-        <h2 className="text-xl font-semibold mb-4">📂 Files for Vendor #{vendorId}</h2>
+        <input
+          type="file"
+          onChange={async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              await onUpload(file);
+              setSelectedFile(null);
+            }
+          }}
+        />
 
-        <div className="mb-4">
-          <input
-            type="file"
-            onChange={async (e) => {
-              const file = e.target.files[0];
-              if (file) {
-                await onUpload(file);
-                setSelectedFile(null);
-              }
-            }}
-            className="border p-1 w-full"
-          />
-        </div>
-
-        <ul className="space-y-2">
-          {files.map((url, idx) => {
-            const filename = url.split("/").pop();
-            return (
-              <li
-                key={idx}
-                className="flex items-center justify-between border p-2 rounded hover:bg-gray-100"
-              >
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline truncate w-3/4"
-                >
-                  📄 {filename}
-                </a>
-                <div className="flex space-x-2">
-                  <button
-                    className="text-green-600 hover:text-green-800"
-                    onClick={() => setSelectedFile(url)}
-                  >
-                    🔍
-                  </button>
-                  {isAdmin && (
-                    <button
-                      onClick={() => onDelete(url)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <ul className="file-list">
+  {Array.isArray(files) && files.length > 0 ? (
+    files.map((url, idx) => {
+      const filename = url.split("/").pop();
+      return (
+        <li key={idx} className="file-item">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="file-link">
+            📄 {filename}
+          </a>
+          <span>
+            <button onClick={() => setSelectedFile(selectedFile === url ? null : url)}>🔍</button>
+            <a
+              href={`${BASE_URL}/download?url=${encodeURIComponent(url)}`}
+              className="download-button"
+              target="_blank"
+              rel="noopener noreferrer"
+            >⬇️</a>
+            {isAdmin && (
+              <button onClick={() => onDelete(url)}>🗑️</button>
+            )}
+          </span>
+        </li>
+      );
+    })
+  ) : (
+    <li>No files uploaded.</li>
+  )}
+</ul>
 
         {selectedFile && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-2">Preview:</h3>
+          <div className="preview">
+            <h3>Preview:</h3>
             {selectedFile.match(/\.(pdf)$/i) ? (
-              <iframe
-                src={selectedFile}
-                title="PDF Preview"
-                className="w-full h-96 border rounded"
-              />
+              <iframe src={selectedFile} title="Preview" className="preview-box" />
             ) : (
-              <img
-                src={selectedFile}
-                alt="File Preview"
-                className="max-w-full max-h-96 border rounded"
-              />
+              <img src={selectedFile} alt="Preview" className="preview-box" />
             )}
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

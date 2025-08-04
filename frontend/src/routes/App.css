@@ -150,3 +150,72 @@ td.col-id {
     padding: 0 5px; /* add safe padding */
   }
 }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.file-list {
+  margin-top: 20px;
+  list-style: none;
+  padding: 0;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.preview {
+  margin-top: 20px;
+}
+
+.preview-box {
+  width: 100%;
+  max-height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.file-link {
+  margin-right: 10px;
+  text-decoration: none;
+}
+
+.download-button {
+  margin-left: 5px;
+  color: blue;
+  text-decoration: none;
+}

@@ -4,7 +4,7 @@ import './App.css';
 import FileModal from '../components/FileModal';
 
 
-export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'http://localhost:5000';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
@@ -25,7 +25,8 @@ function App() {
   const [user, setUser] = useState(localStorage.getItem('user') || null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
   const [activeVendorId, setActiveVendorId] = useState(null);
-  const [fileModalFiles, setFileModalFiles] = useState([])
+  const [fileModalFiles, setFileModalFiles] = useState([]);
+
 
   const isAdmin = user === 'admin';
   const isBoss = user === 'boss';
@@ -45,6 +46,20 @@ function App() {
         alert("Failed to load field config.");
       });
   }, [user]);
+
+  useEffect(() => {
+  if (!activeVendorId) return;
+
+  fetch(`${BASE_URL}/vendor-files?vendor_id=${activeVendorId}`)
+    .then(res => res.json())
+    .then(filesJson => {
+      setFileModalFiles(filesJson.files || []);
+    })
+    .catch(err => {
+      console.error("❌ Failed to fetch vendor files:", err);
+    });
+}, [activeVendorId]);
+
 
   if (!user) {
     return (
@@ -257,10 +272,22 @@ const handleFileDelete = async (fileUrl) => {
         return (
           <div key={i} className="supplier-card">
             <table className="record-table vendor-new">
+              <thead>
+                <tr>
+                  {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
+
+
+                    <th key={f.key}>{f.label}</th>
+                  ))}
+                  {adminMode && <th>Actions</th>}
+                </tr>
+              </thead>
               
               <tbody>
                 <tr>
-                  {fields.filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+                  {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+
+                    
                     const value = isEditing ? editingSuppliers[record.id][f.key] : record[f.key];
                     let style = {};
                     if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
@@ -393,14 +420,14 @@ const handleFileDelete = async (fileUrl) => {
           <FieldEditor fields={fields} setFields={setFields} />
         </>
       )}
-      <FileModal
+  <FileModal
   vendorId={activeVendorId}
   files={fileModalFiles}
   isOpen={fileModalOpen}
   onClose={() => setFileModalOpen(false)}
   onUpload={handleFileUpload}
   onDelete={handleFileDelete}
-  isAdmin={isAdmin}
+  isAdmin={adminMode}
 />
     </div>
   );

@@ -1,12 +1,8 @@
-from supabase import create_client, Client
 import mimetypes
 from utils.supabase_client import supabase
 
-SUPABASE_URL = "https://qwtcqnaqhfsjwdnlqyds.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dGNxbmFxaGZzandkbmxxeWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTAzNTIsImV4cCI6MjA2ODc2NjM1Mn0.yXF1vpaZmUcZWToOw-GccrNYCWuHh2Wa-zieeuk6kUY"
 BUCKET = "vendor-files"
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def fetch_all_grouped():
     suppliers = supabase.table("suppliers").select("*").execute().data
@@ -18,7 +14,7 @@ def fetch_all_grouped():
         sup_data = sup["data"]
         sup_data["id"] = sup["id"]
         sup_data["vendors"] = [
-            {**v["data"], "id": v["id"]}
+            {**v["data"], "id": v["id"], "file": v["data"].get("file", [])}
             for v in vendors if v["supplier_id"] == sup["id"]
         ]
         tab = sup.get("tab") or "Хамза"
@@ -47,14 +43,19 @@ def upsert_supplier(record):
 def upsert_vendor(record):
     vendor_id = record.get("id")
     supplier_id = record.get("x_studio_supplier_order")
-
-    # Make sure GTD is float
     record["x_studio_gtd"] = float(record.get("x_studio_gtd", 0) or 0)
+
+    # Fetch existing vendor (if any) to preserve 'file' list
+    existing = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
+    existing_data = existing["data"] if existing else {}
+
+    preserved_file = existing_data.get("file", [])
+    merged_data = {**record, "file": preserved_file}
 
     supabase.table("vendors").upsert({
         "id": vendor_id,
         "supplier_id": supplier_id,
-        "data": record
+        "data": merged_data
     }).execute()
 
 def delete_supplier(supplier_id):
@@ -72,25 +73,30 @@ def upload_file_to_supabase(vendor_id, file_storage):
     filename = file_storage.filename
     path = f"{vendor_id}/{filename}"
     content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-    file_bytes = BytesIO(file_storage.read())  # ← KEY FIX
+    file_bytes = file_storage.read()
 
+    # Upload to Supabase Storage
     res = supabase.storage.from_("vendor-files").upload(
         path,
         file_bytes,
         {
             "content-type": content_type,
-            "upsert": True,
-            "cacheControl": "3600",
+            "x-upsert": "true",
+            "cacheControl": "3600"
         }
     )
 
-    if res.get("error"):
-        raise Exception(f"Upload failed: {res['error']['message']}")
+    # ✅ Error check — correct way
+    if hasattr(res, "error") and res.error:
+        raise Exception(f"Upload failed: {res.error}")
 
+    # Generate public URL
     public_url = f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/vendor-files/{path}"
 
+    # Update vendor record
     vendor = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
     current_files = vendor["data"].get("file", [])
+
     if public_url not in current_files:
         current_files.append(public_url)
 
@@ -115,3 +121,12 @@ def delete_file_from_supabase(vendor_id, file_url):
         "data": {**vendor["data"], "file": updated_files}
     }).eq("id", vendor_id).execute()
 
+def get_all_files_for_vendor(vendor_id):
+    response = supabase.storage.from_(BUCKET).list(path=vendor_id)
+    if not response:
+        return []
+
+    return [
+        f"https://qwtcqnaqhfsjwdnlqyds.supabase.co/storage/v1/object/public/{BUCKET}/{vendor_id}/{f['name']}"
+        for f in response
+    ]
