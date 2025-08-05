@@ -4,7 +4,7 @@ import './App.css';
 import FileModal from '../components/FileModal';
 
 
-export const BASE_URL = 'http://localhost:5000';
+export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
