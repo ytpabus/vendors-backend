@@ -27,6 +27,15 @@ function App() {
   const [activeVendorId, setActiveVendorId] = useState(null);
   const [fileModalFiles, setFileModalFiles] = useState([]);
 
+  const supplierFirmMap = {
+    "Света": "TOO Enrichment",
+    "Жарас": "TOO Gross Ost Time",
+    "Ильдар": "TOO AZK Esentai",
+    "Салим": "TOO Saman Biday",
+    "Тлек": "TOO Astana Grain",
+    "Анастасия": "TOO Торговый Дом Арасан"
+  };
+
 
   const isAdmin = user === 'admin';
   const isBoss = user === 'boss';
@@ -102,7 +111,7 @@ function App() {
   };
 
   const isVisible = (key, target) =>
-    key !== 'id' && key !== 'x_studio_supplier_order' &&
+    key !== 'id' && key !== 'x_studio_supplier_order' && key !== 'x_studio_supplier_name' && 
     (target === 'supplier' || target === 'vendor');
 
   const handleVendorChange = (supplierId, field, value) => {
@@ -271,6 +280,21 @@ const handleFileDelete = async (fileUrl) => {
 
         return (
           <div key={i} className="supplier-card">
+          {/* ✅ Default firm name instead of Поставщик */}
+            <div style={{  background: '#D0EDE5',
+  border: '1px solid #B2D2CA',
+  borderRadius: '6px',
+  boxShadow: '0 5px 6px #B2D2CA',
+  padding: '6px 10px',
+  display: 'inline-block',
+  marginBottom: '6px',
+  color: '#000000',
+  fontWeight: 'bold',
+  fontSize: '14px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px'}}>
+              {supplierFirmMap[record["x_studio_supplier_name"]] || record["x_studio_supplier_name"]}
+            </div>
             <table className="record-table vendor-new">
               <thead>
                 <tr>
