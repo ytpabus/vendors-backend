@@ -24,11 +24,15 @@ def fetch_all_grouped():
 
 def upsert_supplier(record):
     sup_id = record.get("id")
-    tab = record.get("x_studio_name_station_to")  # Or however you determine tab
+    tab = record.get("x_studio_name_station_to")
+
     if tab == "Сергили":
         tab_key = "Сергили"
-    else:
+    elif tab == "Хамза":
         tab_key = "Хамза"
+    else:
+        print("⚠️ Skipping supplier: station_to is not Хамза or Сергили")
+        return
 
     # Remove vendor list if present
     record.pop("vendors", None)
@@ -45,9 +49,9 @@ def upsert_vendor(record):
     supplier_id = record.get("x_studio_supplier_order")
     record["x_studio_gtd"] = float(record.get("x_studio_gtd", 0) or 0)
 
-    # Fetch existing vendor (if any) to preserve 'file' list
-    existing = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute().data
-    existing_data = existing["data"] if existing else {}
+    # Safe fetch
+    existing = supabase.table("vendors").select("*").eq("id", vendor_id).limit(1).execute().data
+    existing_data = existing[0]["data"] if existing else {}
 
     preserved_file = existing_data.get("file", [])
     merged_data = {**record, "file": preserved_file}
