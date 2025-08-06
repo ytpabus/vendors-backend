@@ -425,6 +425,11 @@ const handleFileDelete = async (fileUrl) => {
       setFileModalOpen(true);
     }}>
       📎 Files
+    {vendor.file_count > 0 && (
+      <span style={{ marginLeft: '4px', fontWeight: 'bold', color: vendor.file_count > 0 ? '#0d47a1' : 'gray' }}>
+        ({vendor.file_count})
+      </span>
+    )}
     </button>
   </td>
 </tr>

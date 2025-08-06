@@ -14,7 +14,7 @@ def fetch_all_grouped():
         sup_data = sup["data"]
         sup_data["id"] = sup["id"]
         sup_data["vendors"] = [
-            {**v["data"], "id": v["id"], "file": v["data"].get("file", [])}
+            {**v["data"], "id": v["id"], "file": v["data"].get("file", []), "file_count": len(v["data"].get("file", []))}
             for v in vendors if v["supplier_id"] == sup["id"]
         ]
         tab = sup.get("tab") or "Хамза"
