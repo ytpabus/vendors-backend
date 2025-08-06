@@ -4,7 +4,7 @@ import './App.css';
 import FileModal from '../components/FileModal';
 
 
-export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'http://127.0.0.1:5000';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
@@ -274,11 +274,16 @@ const handleFileDelete = async (fileUrl) => {
             <table className="record-table vendor-new">
               <thead>
                 <tr>
-                  {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
-
-
-                    <th key={f.key}>{f.label}</th>
-                  ))}
+                  {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+  const showWarning = f.key === 'x_studio_kley' && (record.vendors || []).some(
+    v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
+  );
+  return (
+    <th key={f.key}>
+      {f.label} {showWarning && <span style={{ color: 'red' }}>⚠️</span>}
+    </th>
+  );
+})}
                   {adminMode && <th>Actions</th>}
                 </tr>
               </thead>
@@ -290,8 +295,6 @@ const handleFileDelete = async (fileUrl) => {
                     
                     const value = isEditing ? editingSuppliers[record.id][f.key] : record[f.key];
                     let style = {};
-                    if (f.key === 'x_studio_remains' && value > 0) style.backgroundColor = '#fdd';
-                    if (f.key === 'x_studio_kley' && hasMissingLab) style.backgroundColor = '#fdd';
                     return (
                       <td key={f.key} className={`col-${f.key}`} style={style}>
                         {isEditing ? (
@@ -342,22 +345,43 @@ const handleFileDelete = async (fileUrl) => {
                           return (
                             <tr key={vIdx}>
   {fields.filter(f => f.target === 'vendor' && isVisible(f.key, 'vendor')).map(f => {
-    const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
-    let style = {};
-    if (f.key === 'x_studio_lab_kley') {
-      style.backgroundColor = !value || parseFloat(value) === 0 ? '#fdd' : '#dfd';
+  const value = isEditingVendor ? editingVendors[vendor.id][f.key] : vendor[f.key];
+  let style = {};
+
+  // Only show red background if lab value is missing or 0
+  if (f.key === 'x_studio_lab_kley') {
+    if (!value || parseFloat(value) === 0) {
+      style.backgroundColor = '#fdd';
     }
-    return (
-      <td key={f.key} style={style}>
-        {isEditingVendor ? (
-          <input
-            value={value || ''}
-            onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
-          />
-        ) : value}
-      </td>
-    );
-  })}
+  }
+
+  return (
+    <td key={f.key} style={style}>
+      {isEditingVendor ? (
+        <input
+          value={value || ''}
+          onChange={e => handleEditVendorChange(vendor.id, f.key, e.target.value)}
+        />
+      ) : (
+        f.key === 'x_studio_lab_kley' ? (() => {
+          const lab = parseFloat(value);
+          const kley = parseFloat(record.x_studio_kley);
+          if (!lab || isNaN(lab)) return <span style={{ color: 'red' }}>0</span>;
+          if (!kley || isNaN(kley) || lab === kley) return <span>{lab}</span>;
+          const diff = lab - kley;
+          const isUp = diff > 0;
+          const color = isUp ? 'green' : 'red';
+          const arrow = isUp ? '↑' : '↓';
+          return (
+            <span>
+              {lab} <span style={{ color }}>{arrow} {diff > 0 ? '+' : ''}{diff.toFixed(1)}</span>
+            </span>
+          );
+        })() : value
+      )}
+    </td>
+  );
+})}
 
   {/* Admin buttons */}
   {adminMode && (
