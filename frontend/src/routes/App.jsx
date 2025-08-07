@@ -297,19 +297,17 @@ const handleFileDelete = async (fileUrl) => {
             </div>
             <table className="record-table vendor-new">
               <thead>
-                <tr>
-                  {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
-  const showWarning = f.key === 'x_studio_kley' && (record.vendors || []).some(
-    v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
-  );
-  return (
-    <th key={f.key}>
-      {f.label} {showWarning && <span style={{ color: 'red' }}>⚠️</span>}
-    </th>
-  );
-})}
-                  {adminMode && <th>Actions</th>}
-                </tr>
+            <tr>
+              {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
+                <th key={f.key}>{f.label}</th>
+              ))}
+              <th>
+                Лабаратория
+                {record.vendors?.some(v =>
+                  !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
+                ) && <span style={{ color: 'red', marginLeft: 4 }}>⚠️</span>}
+              </th>
+            </tr>
               </thead>
               
               <tbody>
@@ -336,6 +334,31 @@ const handleFileDelete = async (fileUrl) => {
                       </td>
                     );
                   })}
+                  <td>
+                    {(() => {
+                      const vendorValues = (record.vendors || []).map(v => parseFloat(v.x_studio_lab_kley)).filter(v => v && v !== 0);
+
+                      if (vendorValues.length === 0) return '';
+
+                      const avg = vendorValues.reduce((a, b) => a + b, 0) / vendorValues.length;
+                      const supplierValue = parseFloat(record.x_studio_kley) || 0;
+                      const diff = avg - supplierValue;
+                      const diffArrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '';
+                      const diffAbs = Math.abs(diff).toFixed(1);
+
+                      return (
+                        <>
+                          {avg.toFixed(1)}{' '}
+                          {diffArrow && (
+                            <span style={{ color: diff > 0 ? 'green' : 'red' }}>
+                              {diffArrow} {diff > 0 ? '+' : ''}{diffAbs}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </td>
+
                   {adminMode && (
                     <td>
                       {isEditing
