@@ -28,6 +28,7 @@ def vendor_webhook():
     upsert_vendor(record)
     return "OK"
 
+
 @app.route("/webhook/delete", methods=["POST"])
 def delete_webhook():
     record = request.get_json()

@@ -62,13 +62,41 @@ def upsert_vendor(record):
         "data": merged_data
     }).execute()
 
+    vendor_list = supabase.table("vendors").select("*").eq("supplier_id", supplier_id).execute().data
+    gtd_sum = sum(float(v["data"].get("x_studio_gtd", 0) or 0) for v in vendor_list)
+
+    # ✅ Fetch the supplier record to preserve other fields
+    supplier = supabase.table("suppliers").select("*").eq("id", supplier_id).single().execute().data
+    if supplier:
+        updated_supplier_data = {**supplier["data"], "x_studio_gtd": gtd_sum}
+        supabase.table("suppliers").update({
+            "data": updated_supplier_data
+        }).eq("id", supplier_id).execute()
+
 def delete_supplier(supplier_id):
     supabase.table("vendors").delete().eq("supplier_id", supplier_id).execute()
     supabase.table("suppliers").delete().eq("id", supplier_id).execute()
     
 def delete_vendor(vendor_id):
-    res = supabase.table("vendors").delete().eq("id", vendor_id).execute()
-    return res.data
+    res = supabase.table("vendors").select("*").eq("id", vendor_id).single().execute()
+    vendor = res.data
+    if not vendor:
+        return None
+    
+    supplier_id = vendor.get("supplier_id")
+    supabase.table("vendors").delete().eq("id", vendor_id).execute()
+
+    vendor_list = supabase.table("vendors").select("*").eq("supplier_id", supplier_id).execute().data
+    gtd_sum = sum(float(v["data"].get("x_studio_gtd", 0) or 0) for v in vendor_list)
+
+    supplier = supabase.table("suppliers").select("*").eq("id", supplier_id).single().execute().data
+    if supplier:
+        updated_supplier_data = {**supplier["data"], "x_studio_gtd": gtd_sum}
+        supabase.table("suppliers").update({
+            "data": updated_supplier_data
+        }).eq("id", supplier_id).execute()
+
+    return True
 
 def upload_file_to_supabase(vendor_id, file_storage):
     from io import BytesIO
