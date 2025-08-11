@@ -1,142 +1,24 @@
 [
-  {
-    "key": "id",
-    "label": "ID",
-    "position": 1,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_supplier_name",
-    "label": "Поставщик",
-    "position": 2,
-    "target": "supplier",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_name_station_to",
-    "label": "Станция наз.",
-    "position": 3,
-    "target": "supplier",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_kley",
-    "label": "Клейковина",
-    "position": 4,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_tons",
-    "label": "Тоннаж",
-    "position": 5,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_gtd",
-    "label": "Отправлено",
-    "position": 6,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_remains",
-    "label": "Остатки",
-    "position": 7,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_refused",
-    "label": "Отказано",
-    "position": 8,
-    "target": "supplier",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_deadline",
-    "label": "Срок Отгрузки",
-    "position": 9,
-    "target": "supplier",
-    "type": "date"
-  },
-  {
-    "key": "id",
-    "label": "ID",
-    "position": 1,
-    "target": "vendor",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_name_firm",
-    "label": "Фирма",
-    "position": 2,
-    "target": "vendor",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_contract_id",
-    "label": "Контракт №",
-    "position": 3,
-    "target": "vendor",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_name_station_from",
-    "label": "Станция отпр.",
-    "position": 4,
-    "target": "vendor",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_gtd",
-    "label": "Отправлено ",
-    "position": 7,
-    "target": "vendor",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_lab_kley",
-    "label": "Лабаратория",
-    "position": 9,
-    "target": "vendor",
-    "type": "number"
-  },
-  {
-    "key": "x_studio_date",
-    "label": "Дата Отгрузки",
-    "position": 11,
-    "target": "vendor",
-    "type": "date"
-  },
-  {
-    "key": "x_studio_arrival",
-    "label": "Дата Прибытия",
-    "position": 12,
-    "target": "vendor",
-    "type": "date"
-  },
-  {
-    "key": "x_studio_name_stage",
-    "label": "Стадия",
-    "position": 13,
-    "target": "vendor",
-    "type": "text"
-  },
-  {
-    "key": "x_studio_supplier_order",
-    "label": "Supplier ID",
-    "position": 14,
-    "target": "vendor",
-    "type": "number"
-  },
-  {
-    "key": "",
-    "label": "",
-    "position": null,
-    "target": "",
-    "type": ""
-  }
+  { "key": "id", "label": "ID", "position": 1, "target": "supplier", "type": "number" },
+  { "key": "x_studio_supplier_name", "label": "Поставщик", "position": 2, "target": "supplier", "type": "text" },
+  { "key": "x_studio_name_station_from", "label": "Станция отпр.", "position": 3, "target": "supplier", "type": "text" },
+  { "key": "x_studio_name_station_to", "label": "Станция наз.", "position": 4, "target": "supplier", "type": "text" },
+  { "key": "x_studio_tons", "label": "Тоннаж", "position": 6, "target": "supplier", "type": "number" },
+  { "key": "x_studio_gtd", "label": "Отправлено", "position": 7, "target": "supplier", "type": "number" },
+  { "key": "x_studio_remains", "label": "Остатки", "position": 8, "target": "supplier", "type": "number" },
+  { "key": "x_studio_refused", "label": "Отказано", "position": 9, "target": "supplier", "type": "number" },
+  { "key": "x_studio_deadline", "label": "Срок Отгрузки", "position": 10, "target": "supplier", "type": "date" },
+
+
+  { "key": "id", "label": "ID", "position": 1, "target": "vendor", "type": "number" },
+  { "key": "x_studio_name_firm", "label": "Фирма", "position": 2, "target": "vendor", "type": "text" },
+  { "key": "x_studio_contract_id", "label": "Контракт №", "position": 3, "target": "vendor", "type": "text" },
+  { "key": "x_studio_name_station_from", "label": "Станция отпр.", "position": 4, "target": "vendor", "type": "text" },
+  { "key": "x_studio_gtd", "label": "Отправлено ", "position": 7, "target": "vendor", "type": "number" },
+  { "key": "x_studio_lab_kley", "label": "Лабаратория", "position": 9, "target": "vendor", "type": "number" },
+  { "key": "x_studio_date", "label": "Дата Отгрузки", "position": 11, "target": "vendor", "type": "date" },
+  { "key": "x_studio_arrival", "label": "Дата Прибытия", "position": 12, "target": "vendor", "type": "date" },
+  { "key": "x_studio_name_stage", "label": "Стадия", "position": 13, "target": "vendor", "type": "text" },
+  { "key": "x_studio_supplier_order", "label": "Supplier ID", "position": 14, "target": "vendor", "type": "number" },
+  { "key": "", "label": "", "position": null, "target": "", "type": "" }
 ]
