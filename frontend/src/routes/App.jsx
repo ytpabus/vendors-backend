@@ -465,7 +465,7 @@ const handleFileDelete = async (fileUrl) => {
               </>
             )}
 
-            {adminMode && (
+            {/*adminMode && (
               <div className="vendor-add-form">
                 <strong>➕ Add New Vendor Order</strong>
                 <table className="record-table vendor-new">
@@ -485,7 +485,7 @@ const handleFileDelete = async (fileUrl) => {
                   </tbody>
                 </table>
               </div>
-            )}
+            )*/}
           </div>
         );
       })}
