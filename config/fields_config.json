@@ -3,6 +3,7 @@
   { "key": "x_studio_supplier_name", "label": "Поставщик", "position": 2, "target": "supplier", "type": "text" },
   { "key": "x_studio_name_station_from", "label": "Станция отпр.", "position": 3, "target": "supplier", "type": "text" },
   { "key": "x_studio_name_station_to", "label": "Станция наз.", "position": 4, "target": "supplier", "type": "text" },
+  { "key": "x_studio_kley", "label": "Клейковина", "position": 5, "target": "supplier", "type": "number" },
   { "key": "x_studio_tons", "label": "Тоннаж", "position": 6, "target": "supplier", "type": "number" },
   { "key": "x_studio_gtd", "label": "Отправлено", "position": 7, "target": "supplier", "type": "number" },
   { "key": "x_studio_remains", "label": "Остатки", "position": 8, "target": "supplier", "type": "number" },
