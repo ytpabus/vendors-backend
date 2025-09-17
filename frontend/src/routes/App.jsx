@@ -309,7 +309,7 @@ function App() {
                 <table className="record-table vendor-new">
                   <thead>
                     <tr>
-                      {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => (
+                      {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier') && f.key !== 'x_studio_month_name').map(f => (
                         <th key={f.key}>{f.label}</th>
                       ))}
                       <th>
@@ -324,7 +324,7 @@ function App() {
                   
                   <tbody>
                     <tr>
-                      {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier')).map(f => {
+                      {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier') && f.key !== 'x_studio_month_name').map(f => {
                         const value = isEditing ? editingSuppliers[record.id][f.key] : record[f.key];
                         let style = {};
                         return (
