@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase, get_all_files_for_vendor
+from utils.supabase_client import supabase
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
 import os
@@ -10,10 +11,58 @@ from io import BytesIO
 app = Flask(__name__)
 CORS(app)
 
-
+log_insert_counter = 0
 def log_event(label, data):
     with open("webhook.log", "a", encoding="utf-8") as f:
         f.write(f"\n🔔 {label}:\n{json.dumps(data, indent=2, ensure_ascii=False)}\n")
+
+def log_action(user, action, ip="", user_agent=""):
+    global log_insert_counter
+    if user == "admin":
+        return
+    try:
+        # Insert new log
+        supabase.table("logs").insert({
+            "username": user,
+            "action": action,
+            "ip": ip,
+            "user_agent": user_agent
+        }).execute()
+
+        # Increment counter
+        log_insert_counter += 1
+
+        # Only check every 200 inserts
+        if log_insert_counter % 200 == 0:
+            count_res = supabase.table("logs").select("id", count="exact").execute()
+            total_logs = count_res.count if hasattr(count_res, "count") else None
+
+            if total_logs and total_logs > 2000:
+                # Calculate how many need to go
+                to_delete = total_logs - 1500
+
+                # Fetch that many oldest logs
+                oldest = supabase.table("logs").select("id, ts") \
+                    .order("ts", asc=True).limit(to_delete).execute().data
+
+                if oldest:
+                    ids_to_delete = [row["id"] for row in oldest]
+                    supabase.table("logs").delete().in_("id", ids_to_delete).execute()
+                    print(f"🗑️ Cleanup triggered: deleted {len(ids_to_delete)} oldest logs")
+    except Exception as e:
+        print("⚠️ Log insert failed:", e)
+
+
+@app.route("/log-event", methods=["POST"])
+def log_event_api():
+    data = request.get_json() or {}
+    user = data.get("user")
+    action = data.get("action", "visit")
+    ip = request.remote_addr
+    ua = request.headers.get("User-Agent", "")
+
+    log_action(user, action, ip, ua)
+    return jsonify({"status": "logged"}), 200
 
 
 @app.route("/webhook/supplier", methods=["POST"])
@@ -64,6 +113,11 @@ def upload_file():
 
     try:
         url = upload_file_to_supabase(vendor_id, file)
+        user = request.headers.get("X-User", "unknown")
+        ip = request.remote_addr
+        ua = request.headers.get("User-Agent", "")
+        log_action(user, "upload_file", ip, ua)
+
         return jsonify({"url": url}), 200
     except Exception as e:
         print(">>> Upload error:", str(e))  # 👈 this is key
@@ -143,12 +197,17 @@ def update_fields_config():
 
 # ✅ View logs (browser-accessible)
 @app.route("/logs", methods=["GET"])
-def view_logs():
+def get_logs():
     try:
-        with open("webhook.log", "r", encoding="utf-8") as f:
-            return f"<pre>{f.read()}</pre>"
-    except:
-        return "No logs yet."
+        logs = supabase.table("logs") \
+            .select("*") \
+            .order("ts", desc=True) \
+            .limit(1000) \
+            .execute().data
+        return jsonify(logs)
+    except Exception as e:
+        print("⚠️ /logs error:", e)
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':

@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import FieldEditor from '../components/FieldEditor';
 import './App.css';
 import FileModal from '../components/FileModal';
+import LogsModal from '../components/LogsModal';
 
 
-export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'http://127.0.0.1:5000';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
@@ -26,6 +27,8 @@ function App() {
   const [fileModalOpen, setFileModalOpen] = useState(false);
   const [activeVendorId, setActiveVendorId] = useState(null);
   const [fileModalFiles, setFileModalFiles] = useState([]);
+  const [logsModalOpen, setLogsModalOpen] = useState(false);
+  const [logs, setLogs] = useState([]);
 
   const supplierFirmMap = {
     "Света": "TOO Enrichment",
@@ -42,6 +45,13 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
+
+    fetch(`${BASE_URL}/log-event`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user, action: "visit" })
+  });
+
     if (!(user === 'admin' || user === 'boss')) {
       setTab(USERS[user].tab);
     }
@@ -83,6 +93,10 @@ function App() {
           } else {
             alert("Invalid credentials");
           }
+          fetch(`${BASE_URL}/log-event`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: username, action: "login" })});
         }}>
           <input name="username" placeholder="Username" autoFocus />
           <input name="password" type="password" placeholder="Password" />
@@ -220,7 +234,8 @@ function App() {
 
     await fetch(`${BASE_URL}/upload`, {
       method: "POST",
-      body: formData
+      body: formData,
+      headers: { "X-User": user }
     });
 
     const dataRes = await fetch(`${BASE_URL}/data`);
@@ -274,6 +289,17 @@ function App() {
           <hr />
           <button onClick={() => setAdminMode(!adminMode)}>🛠 Admin Mode: {adminMode ? 'ON' : 'OFF'}</button>
         </>
+      )}
+
+      {isAdmin && (
+        <button onClick={() => {
+          fetch(`${BASE_URL}/logs`)
+            .then(res => res.json())
+            .then(data => setLogs(Array.isArray(data) ? data : []));
+          setLogsModalOpen(true);
+        }}>
+          📊 View Logs
+        </button>
       )}
 
       {/* ✅ Month wrappers that include supplier cards as-is */}
@@ -517,6 +543,11 @@ function App() {
         onUpload={handleFileUpload}
         onDelete={handleFileDelete}
         isAdmin={adminMode}
+      />
+      <LogsModal
+        isOpen={logsModalOpen}
+        onClose={() => setLogsModalOpen(false)}
+        logs={logs}
       />
     </div>
   );

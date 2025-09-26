@@ -22,6 +22,9 @@ const FileModal = ({ vendorId, files, isOpen, onClose, onUpload, onDelete, isAdm
           onChange={async (e) => {
             const file = e.target.files[0];
             if (file) {
+              if (/[А-Яа-яЁё]/.test(file.name)) {
+                alert("⚠️ Название загружаемых файлов не может содержать Кириллицу");
+              }
               await onUpload(file);
               setSelectedFile(null);
             }
