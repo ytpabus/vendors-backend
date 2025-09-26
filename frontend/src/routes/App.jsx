@@ -5,7 +5,7 @@ import FileModal from '../components/FileModal';
 import LogsModal from '../components/LogsModal';
 
 
-export const BASE_URL = 'http://127.0.0.1:5000';
+export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
