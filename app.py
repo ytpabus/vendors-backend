@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_file
-from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase, get_all_files_for_vendor
+from utils.supabase_helpers import fetch_all_grouped, upsert_supplier, upsert_vendor, delete_supplier, delete_vendor, upload_file_to_supabase, delete_file_from_supabase, get_all_files_for_vendor, set_supplier_archived
 from utils.supabase_client import supabase
 from utils.helpers import CONFIG_PATH, save_field_config
 import json
@@ -83,7 +83,7 @@ def delete_webhook():
     record = request.get_json()
     supplier_id = record.get("id")
     if supplier_id:
-        delete_supplier(supplier_id)
+        set_supplier_archived (supplier_id)
     return "OK"
 
 @app.route("/vendor-files", methods=["GET"])
@@ -175,7 +175,7 @@ def delete_vendor_webhook():
 @app.route("/data")
 def get_data():
     mode = request.args.get("archived", "0")  # '0' active-only, 'all' active+archived
-    include_archived = (mode == "all")
+    include_archived = (mode in ("all", "1", "true"))
     return jsonify(fetch_all_grouped(include_archived=include_archived))
 
 

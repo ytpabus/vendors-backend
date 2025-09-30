@@ -5,7 +5,7 @@ import FileModal from '../components/FileModal';
 import LogsModal from '../components/LogsModal';
 
 
-export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
+export const BASE_URL = 'http://127.0.0.1:5000';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
@@ -81,7 +81,7 @@ function App() {
       setTab(USERS[user].tab);
     }
     const params = new URLSearchParams();
-    const archivedParam = viewMode === 'all' ? 'all' : (viewMode === 'arch' ? '1' : '0');
+    const archivedParam = (viewMode === 'active') ? '0' : 'all';
     params.set('archived', archivedParam);
 
     fetch(`${BASE_URL}/data?${params.toString()}`)
@@ -447,7 +447,7 @@ function App() {
         <div key={month} className="month-card">
           <h2>{month}</h2>
 
-          {records.sort((l, r) => String(l.x_studio_deadline || '').localeCompare(String(r.x_studio_deadline || ''))).map((record, i) => {
+          {records.slice().sort((l, r) => String(l.x_studio_deadline || '').localeCompare(String(r.x_studio_deadline || ''))).map((record, i) => {
             const isEditing = !!editingSuppliers[record.id];
             const hasMissingLab = (record.vendors || []).some(
               v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0

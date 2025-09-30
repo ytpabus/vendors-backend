@@ -126,6 +126,43 @@ def upsert_vendor(record):
             "data": updated_supplier_data
         }).eq("id", supplier_id).execute()
 
+def set_supplier_archived(supplier_id, archived=True):
+    # supplier row
+    res = supabase.table("suppliers").select("id,data").eq("id", supplier_id).limit(1).execute()
+    rows = res.data or []
+    if not rows:
+        return False
+
+    supplier = rows[0]
+    sdata = dict(supplier.get("data") or {})
+    sdata["archived"] = bool(archived)
+    sdata["Archived"] = bool(archived)
+    if archived:
+        sdata.setdefault("x_status", "Завершено")
+    else:
+        if sdata.get("x_status") == "Завершено":
+            sdata.pop("x_status", None)
+
+    # update supplier (top-level column + JSON)
+    supabase.table("suppliers").update({
+        "archived": archived,          # requires boolean column 'archived' on suppliers
+        "data": sdata
+    }).eq("id", supplier_id).execute()
+
+    # vendor rows under this supplier
+    vend_res = supabase.table("vendors").select("id,data").eq("supplier_id", supplier_id).execute()
+    vendors = vend_res.data or []
+    for v in vendors:
+        vdata = dict(v.get("data") or {})
+        vdata["archived"] = bool(archived)
+        vdata["Archived"] = bool(archived)
+        supabase.table("vendors").update({
+            "archived": archived,      # requires boolean column 'archived' on vendors
+            "data": vdata
+        }).eq("id", v["id"]).execute()
+
+    return True
+
 def delete_supplier(supplier_id):
     supabase.table("vendors").delete().eq("supplier_id", supplier_id).execute()
     supabase.table("suppliers").delete().eq("id", supplier_id).execute()
