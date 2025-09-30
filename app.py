@@ -174,8 +174,9 @@ def delete_vendor_webhook():
 
 @app.route("/data")
 def get_data():
-    grouped = fetch_all_grouped()
-    return jsonify(grouped)
+    mode = request.args.get("archived", "0")  # '0' active-only, 'all' active+archived
+    include_archived = (mode == "all")
+    return jsonify(fetch_all_grouped(include_archived=include_archived))
 
 
 # ✅ Field Editor config

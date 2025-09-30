@@ -4,19 +4,31 @@ from utils.supabase_client import supabase
 BUCKET = "vendor-files"
 
 
-def fetch_all_grouped():
-    suppliers = supabase.table("suppliers").select("*").execute().data
-    vendors = supabase.table("vendors").select("*").execute().data
+def fetch_all_grouped(include_archived=False):
+    # suppliers
+    q_sup = supabase.table("suppliers").select("*")
+    if not include_archived:
+        q_sup = q_sup.eq("archived", False)
+    suppliers = q_sup.execute().data
 
-    # Build { tab: [suppliers...] }, each supplier gets its vendor sublist
+    supplier_ids = [s["id"] for s in suppliers] or ["__none__"]
+
+    # vendors (only for the selected suppliers)
+    q_vend = supabase.table("vendors").select("*").in_("supplier_id", supplier_ids)
+    if not include_archived:
+        q_vend = q_vend.eq("archived", False)
+    vendors = q_vend.execute().data
+
     grouped = {"Хамза": [], "Сергили": []}
-    for sup in suppliers:
-        sup_data = sup["data"]
-        sup_data["id"] = sup["id"]
-        sup_data["vendors"] = [
+    vend_by_sup = {}
+    for v in vendors:
+        vend_by_sup.setdefault(v["supplier_id"], []).append(
             {**v["data"], "id": v["id"], "file": v["data"].get("file", []), "file_count": len(v["data"].get("file", []))}
-            for v in vendors if v["supplier_id"] == sup["id"]
-        ]
+        )
+
+    for sup in suppliers:
+        sup_data = sup["data"]; sup_data["id"] = sup["id"]
+        sup_data["vendors"] = vend_by_sup.get(sup["id"], [])
         tab = sup.get("tab") or "Хамза"
         grouped.setdefault(tab, []).append(sup_data)
 
@@ -33,6 +45,21 @@ def upsert_supplier(record):
     else:
         print("⚠️ Skipping supplier: station_to is not Хамза or Сергили")
         return
+    
+    # NEW: preserve archived/status from existing row (column or JSON)
+    try:
+        _rows = supabase.table("suppliers").select("archived,data").eq("id", sup_id).limit(1).execute().data
+        if _rows:
+            _row = _rows[0]
+            _data = _row.get("data") or {}
+            _arch = bool(_row.get("archived") or _data.get("archived") or _data.get("Archived"))
+            if _arch:
+                record["archived"] = True
+                record["Archived"] = True
+                if not record.get("x_status"):
+                    record["x_status"] = _data.get("x_status") or "Завершено"
+    except Exception:
+        pass
 
     # Remove vendor list if present
     record.pop("vendors", None)
@@ -44,6 +71,13 @@ def upsert_supplier(record):
         "data": record
     }).execute()
 
+    # NEW: keep top-level 'archived' column in sync if set in JSON
+    if record.get("archived") or record.get("Archived"):
+        try:
+            supabase.table("suppliers").update({"archived": True}).eq("id", sup_id).execute()
+        except Exception:
+            pass
+
 def upsert_vendor(record):
     vendor_id = record.get("id")
     supplier_id = record.get("x_studio_supplier_order")
@@ -53,14 +87,33 @@ def upsert_vendor(record):
     existing = supabase.table("vendors").select("*").eq("id", vendor_id).limit(1).execute().data
     existing_data = existing[0]["data"] if existing else {}
 
+    # NEW: preserve archived flag from existing row (column or JSON)
+    preserved_archived = bool(
+        (existing and existing[0].get("archived")) or
+        existing_data.get("archived") or
+        existing_data.get("Archived")
+    )
+
     preserved_file = existing_data.get("file", [])
     merged_data = {**record, "file": preserved_file}
+
+    # NEW: keep JSON archived flags if previously archived
+    if preserved_archived:
+        merged_data["archived"] = True
+        merged_data["Archived"] = True
 
     supabase.table("vendors").upsert({
         "id": vendor_id,
         "supplier_id": supplier_id,
         "data": merged_data
     }).execute()
+
+    # NEW: keep top-level 'archived' column in sync if needed
+    if preserved_archived:
+        try:
+            supabase.table("vendors").update({"archived": True}).eq("id", vendor_id).execute()
+        except Exception:
+            pass
 
     vendor_list = supabase.table("vendors").select("*").eq("supplier_id", supplier_id).execute().data
     gtd_sum = sum(float(v["data"].get("x_studio_gtd", 0) or 0) for v in vendor_list)

@@ -235,3 +235,24 @@ td.col-id {
   color: blue;
   text-decoration: none;
 }
+
+.wb-archived-watermark{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: clamp(28px, 18cqi, 110px);  /* <— grows with card */
+  line-height: .95;
+  font-weight: 800;
+  letter-spacing: .08em;        /* slightly tighter so it fills more */
+  text-transform: uppercase;
+  color: rgba(220, 53, 70, 0.151);
+  padding: 0 4%;                /* keep edges clean */
+  text-align:center;
+  white-space: nowrap;          /* span across the card */
+  pointer-events: none;
+  user-select: none;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}

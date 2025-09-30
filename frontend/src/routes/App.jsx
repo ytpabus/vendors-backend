@@ -14,6 +14,19 @@ const USERS = {
   boss: { password: 'Bo$$Access3', tab: 'all' },
 };
 
+const monthMap = {
+  "Январь": 1, "Февраль": 2, "Март": 3, "Апрель": 4,
+  "Май": 5, "Июнь": 6, "Июль": 7, "Август": 8,
+  "Сентябрь": 9, "Октябрь": 10, "Ноябрь": 11, "Декабрь": 12
+};
+
+function monthSequence(str) {
+  if (!str) return 0;
+  const [name, yy] = str.split(" ");
+  const mm = monthMap[name] || 0;
+  return parseInt(`${yy}${String(mm).padStart(2, "0")}`, 10);
+}
+
 function App() {
   const [tab, setTab] = useState('Хамза');
   const [data, setData] = useState([]);
@@ -29,6 +42,11 @@ function App() {
   const [fileModalFiles, setFileModalFiles] = useState([]);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [selectedMonths, setSelectedMonths] = useState([]);   // '' = all
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('active');
+
 
   const supplierFirmMap = {
     "Света": "TOO Enrichment",
@@ -44,18 +62,33 @@ function App() {
   const allowedTab = (isAdmin || isBoss) ? tab : USERS[user]?.tab;
 
   useEffect(() => {
+    const all = [...(data['Хамза'] || []), ...(data['Сергили'] || [])];
+    const unique = Array.from(new Set(all.map(r => r.x_studio_month_name).filter(Boolean))).sort(([a], [b]) => monthSequence(a) - monthSequence(b));
+    setAvailableMonths(unique);
+    setSelectedMonths(ms => ms.filter(m => unique.includes(m)));
+  }, [data]);
+
+  useEffect(() => {
     if (!user) return;
 
     fetch(`${BASE_URL}/log-event`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user, action: "visit" })
-  });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, action: "visit" })
+    });
 
     if (!(user === 'admin' || user === 'boss')) {
       setTab(USERS[user].tab);
     }
-    fetch(`${BASE_URL}/data`).then(res => res.json()).then(setData);
+    const params = new URLSearchParams();
+    const archivedParam = viewMode === 'all' ? 'all' : (viewMode === 'arch' ? '1' : '0');
+    params.set('archived', archivedParam);
+
+    fetch(`${BASE_URL}/data?${params.toString()}`)
+      .then(res => res.json())
+      .then(setData);
+
+    // keep fields-config fetch as-is
     fetch(`${BASE_URL}/fields-config`)
       .then(res => res.ok ? res.json() : Promise.reject(`Failed with ${res.status}`))
       .then(setFields)
@@ -63,7 +96,7 @@ function App() {
         console.error("❌ Field config fetch error:", err);
         alert("Failed to load field config.");
       });
-  }, [user]);
+  }, [user, viewMode]);
 
   useEffect(() => {
     if (!activeVendorId) return;
@@ -96,7 +129,8 @@ function App() {
           fetch(`${BASE_URL}/log-event`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user: username, action: "login" })});
+            body: JSON.stringify({ user: username, action: "login" })
+          });
         }}>
           <input name="username" placeholder="Username" autoFocus />
           <input name="password" type="password" placeholder="Password" />
@@ -112,9 +146,14 @@ function App() {
     setTab('Хамза');
   };
 
-  const filtered = (data[tab] || []).filter(
-    r => allowedTab === 'all' || r.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1)
-  );
+  const filtered = (data[tab] || [])
+    .filter(r => allowedTab === 'all' || r.x_studio_station_to === (allowedTab === 'Хамза' ? 2 : 1))
+    .filter(r => selectedMonths.length === 0 || selectedMonths.includes(r.x_studio_month_name))
+    .filter(r => {
+      const isArchived = !!(r.archived || r.Archived);
+      if (viewMode === 'all') return true;
+      return viewMode === 'arch' ? isArchived : !isArchived;
+    });
 
   const toggleExpand = (id) => {
     setExpandedSuppliers(prev =>
@@ -123,7 +162,7 @@ function App() {
   };
 
   const isVisible = (key, target) =>
-    key !== 'id' && key !== 'x_studio_supplier_order' && key !== 'x_studio_supplier_name' && 
+    key !== 'id' && key !== 'x_studio_supplier_order' && key !== 'x_studio_supplier_name' &&
     (target === 'supplier' || target === 'vendor');
 
   const handleVendorChange = (supplierId, field, value) => {
@@ -226,7 +265,7 @@ function App() {
       });
     });
   };
-  
+
   const handleFileUpload = async (file) => {
     const formData = new FormData();
     formData.append("vendor_id", activeVendorId);
@@ -302,12 +341,113 @@ function App() {
         </button>
       )}
 
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '8px 0' }}>
+        <button onClick={() => setFilterOpen(v => !v)}>Фильтр</button>
+
+        {filterOpen && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '8px 12px',
+              border: '1px solid #ddd',
+              borderRadius: 8,
+              background: '#f7f7f7',
+              flexWrap: 'wrap'
+            }}
+          >
+            {/* 3-way toggle */}
+            <div style={{ display: 'inline-flex', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+              <button
+                onClick={() => setViewMode('active')}
+                style={{
+                  padding: '6px 10px',
+                  border: 'none',
+                  background: viewMode === 'active' ? '#e6f4ea' : 'white',
+                  fontWeight: viewMode === 'active' ? 700 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                В Процессе
+              </button>
+              <button
+                onClick={() => setViewMode('all')}
+                style={{
+                  padding: '6px 10px',
+                  borderLeft: '1px solid #ddd',
+                  borderRight: '1px solid #ddd',
+                  background: viewMode === 'all' ? '#e6f4ea' : 'white',
+                  fontWeight: viewMode === 'all' ? 700 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Все
+              </button>
+              <button
+                onClick={() => setViewMode('arch')}
+                style={{
+                  padding: '6px 10px',
+                  border: 'none',
+                  background: viewMode === 'arch' ? '#e6f4ea' : 'white',
+                  fontWeight: viewMode === 'arch' ? 700 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Архив
+              </button>
+            </div>
+
+            {/* Месяц multiselect (UI only) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 600 }}>Месяц:</span>
+              <select
+                multiple
+                size={Math.max(availableMonths.length, 4)}
+                value={selectedMonths}
+                onChange={() => { /* noop: selection is controlled via state below */ }}
+              >
+                {availableMonths.map(m => (
+                  <option
+                    key={m}
+                    value={m}
+                    onMouseDown={(e) => {
+                      // prevent the native single-select behavior
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedMonths(prev =>
+                        prev.includes(m) ? prev.filter(v => v !== m) : [...prev, m]
+                      );
+                    }}
+                    onKeyDown={(e) => {
+                      // keyboard toggle (Space/Enter)
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setSelectedMonths(prev =>
+                          prev.includes(m) ? prev.filter(v => v !== m) : [...prev, m]
+                        );
+                      }
+                    }}
+                    aria-selected={selectedMonths.includes(m)}
+                  >
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={() => setSelectedMonths([])}>Сброс</button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ✅ Month wrappers that include supplier cards as-is */}
-      {Object.entries(groupedByMonth).map(([month, records]) => (
+      {Object.entries(groupedByMonth)
+      .sort(([a], [b]) => monthSequence(a) - monthSequence(b))
+      .map(([month, records]) => (
         <div key={month} className="month-card">
           <h2>{month}</h2>
 
-          {records.map((record, i) => {
+          {records.sort((l, r) => String(l.x_studio_deadline || '').localeCompare(String(r.x_studio_deadline || ''))).map((record, i) => {
             const isEditing = !!editingSuppliers[record.id];
             const hasMissingLab = (record.vendors || []).some(
               v => !v.x_studio_lab_kley || parseFloat(v.x_studio_lab_kley) === 0
@@ -315,9 +455,13 @@ function App() {
             const isExpanded = expandedSuppliers.includes(record.id);
 
             return (
-              <div key={i} className="supplier-card">
+              <div key={i} className="supplier-card" style={{ position: 'relative' }}>
+                {(record.archived || record.Archived || record.x_status === 'Завершено') && (
+                  <div className="wb-archived-watermark">Завершено</div>
+                )}
                 {/* ✅ Default firm name instead of Поставщик */}
-                <div style={{  background: '#D0EDE5',
+                <div style={{
+                  background: '#D0EDE5',
                   border: '1px solid #B2D2CA',
                   borderRadius: '6px',
                   boxShadow: '0 5px 6px #B2D2CA',
@@ -328,7 +472,8 @@ function App() {
                   fontWeight: 'bold',
                   fontSize: '14px',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px'}}>
+                  letterSpacing: '0.5px'
+                }}>
                   {supplierFirmMap[record["x_studio_supplier_name"]] || record["x_studio_supplier_name"]}
                 </div>
 
@@ -347,7 +492,7 @@ function App() {
                       {adminMode && <th>Actions</th>}
                     </tr>
                   </thead>
-                  
+
                   <tbody>
                     <tr>
                       {(fields || []).filter(f => f.target === 'supplier' && isVisible(f.key, 'supplier') && f.key !== 'x_studio_month_name').map(f => {
