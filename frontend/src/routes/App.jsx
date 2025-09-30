@@ -241,7 +241,7 @@ function App() {
   };
 
   const deleteSupplier = (id) => {
-    fetch(`${BASE_URL}/webhook/delete`, {
+    fetch(`${BASE_URL}/admin/hard-delete-supplier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })

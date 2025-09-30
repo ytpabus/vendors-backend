@@ -86,6 +86,14 @@ def delete_webhook():
         set_supplier_archived (supplier_id)
     return "OK"
 
+@app.route("/admin/hard-delete-supplier", methods=["POST"])
+def hard_delete_supplier():
+    record = request.get_json()
+    supplier_id = record.get("id")
+    if supplier_id:
+        delete_supplier (supplier_id)
+    return "OK"
+
 @app.route("/vendor-files", methods=["GET"])
 def get_vendor_files():
     vendor_id = request.args.get("vendor_id")
