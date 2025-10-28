@@ -13,7 +13,7 @@ export const BASE_URL = 'https://vendors-backend-xkqt.onrender.com';
 
 const USERS = {
   xamza: { password: 'Z8r@Hamza1', tab: 'Хамза' },
-  sergili: { password: 'S3r#Gili2', tab: 'Сергили' },
+  sergili: { password: '6126', tab: 'Сергили' },
   admin: { password: 'Adm!nPower9', tab: 'all' },
   boss: { password: 'Bo$$Access3', tab: 'all' },
 };
