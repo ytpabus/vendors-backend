@@ -121,10 +121,22 @@ def upsert_vendor(record):
     # ✅ Fetch the supplier record to preserve other fields
     supplier = supabase.table("suppliers").select("*").eq("id", supplier_id).single().execute().data
     if supplier:
-        updated_supplier_data = {**supplier["data"], "x_studio_gtd": gtd_sum}
-        supabase.table("suppliers").update({
-            "data": updated_supplier_data
-        }).eq("id", supplier_id).execute()
+        sdata = supplier["data"] or {}
+
+        tons = float(sdata.get("x_studio_tons", 0) or 0)
+        refused = float(sdata.get("x_studio_refused", 0) or 0)
+
+        remains = tons - gtd_sum - refused
+
+        updated_supplier_data = {
+            **sdata,
+            "x_studio_gtd": gtd_sum,
+            "x_studio_remains": remains
+        }
+
+    supabase.table("suppliers").update({
+        "data": updated_supplier_data
+    }).eq("id", supplier_id).execute()
 
 def set_supplier_archived(supplier_id, archived=True):
     # supplier row
