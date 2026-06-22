@@ -57,7 +57,8 @@ function App() {
     "Ильдар": "TOO AZK Esentai",
     "Салим": "TOO Saman Biday",
     "Тлек": "TOO Astana Grain",
-    "Анастасия": "TOO Торговый Дом Арасан"
+    "Анастасия": "TOO Торговый Дом Арасан",
+    "Айдос": "TOO Ken dala JQ"
   };
 
   const isAdmin = user === 'admin';
